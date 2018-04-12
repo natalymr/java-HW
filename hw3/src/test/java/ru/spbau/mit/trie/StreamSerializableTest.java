@@ -46,4 +46,30 @@ public class StreamSerializableTest {
         assertTrue(testedTrie.contains("ade"));
         assertTrue(testedTrie.contains("afg"));
     }
+
+    @Test
+    public void testSerializeDeserialize() {
+        TrieImplementation testedTrie = new TrieImplementation();
+        testedTrie.add("qwe");
+        testedTrie.add("qrt");
+        testedTrie.add("asd");
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            testedTrie.serialize(outputStream);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        ByteArrayInputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray());
+        try {
+            testedTrie.deserialize(inputStream);
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        assertTrue(testedTrie.contains("qwe"));
+        assertTrue(testedTrie.contains("qrt"));
+        assertTrue(testedTrie.contains("asd"));
+    }
 }
