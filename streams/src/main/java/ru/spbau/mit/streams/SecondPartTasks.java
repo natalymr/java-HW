@@ -53,15 +53,11 @@ public final class SecondPartTasks {
     // Дано отображение из имени автора в список с содержанием его произведений.
     // Надо вычислить, чья общая длина произведений наибольшая.
     public static String findPrinter(Map<String, List<String>> compositions) {
-        Comparator<Map.Entry<String, List<String>>> writingLengthComparator =
-                Comparator.comparing(s -> String.join("", s.getValue())
-                                        .length());
-
         return compositions.entrySet()
                 .stream()
-                .max(writingLengthComparator)
-                .map(Map.Entry::getKey)
-                .orElse("");
+                .max(Comparator.comparing(s -> s.getValue().stream()
+                        .mapToInt(String::length).sum()))
+                .orElseThrow(RuntimeException::new).getKey();
     }
 
     // Вы крупный поставщик продуктов. Каждая торговая сеть делает вам заказ в виде Map<Товар, Количество>.
