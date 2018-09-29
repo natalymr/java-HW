@@ -17,7 +17,7 @@ import static org.assertj.core.api.Assertions.*;
 public class GitTest {
 
     @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
+    public final TemporaryFolder folder = new TemporaryFolder();
 
     @Test
     public void testInit() {
@@ -85,7 +85,8 @@ public class GitTest {
             }
 
             // check that there is info about this file in index.txt
-            String hashOfFileExpected = blobFile.getName().toString();
+            String hashOfFileExpected = blobFile.getName();
+            hashOfFileExpected = hashOfFileExpected.substring(0,hashOfFileExpected.length() - 4);
             String fileNameInIndexExpected = folder.getRoot().toPath().resolve(fileName).toString();
             File indexFile = folder.getRoot().toPath().resolve(".git").resolve("index.txt").toFile();
             try (Scanner scanner = new Scanner(indexFile)) {
@@ -105,132 +106,262 @@ public class GitTest {
     }
 
     @Test
-    public void testMatchHashingOfFiles() {
+    public void testLog() {
         Git git = new Git(folder.getRoot());
 
         git.init();
 
         String fileName = "file.txt";
-        String fileContent = "zzz";
+        String fileContentFirst = "zzz";
+        String fileContentSecond = "aaa";
 
         try {
             File file = folder.newFile(fileName);
-            FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
+            FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
 
             git.add(file.toPath());
 
             git.commit("First commit!");
 
-            File objectsDir = folder.getRoot().toPath().resolve(".git").resolve("objects").toFile();
-            List<File> objectsContains = (List<File>) FileUtils.listFiles(objectsDir,
-                    TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+            FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", true);
 
-            // check that in objects only:
-            // 1 blob file
-            // 1 tree file
-            // 1 commit file
-            assertThat(objectsContains.size()).isEqualTo(3);
+            git.add(file.toPath());
+
+            git.commit("Second commit!");
+
+            List<CommitInfo> logBoth = git.log();
+
+            for(CommitInfo curCommit : logBoth) {
+                curCommit.printCommitInfo();
+            }
+
+
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("TestLog. Failed to write to temporary file");
         }
     }
 
     @Test
-    public void testTreeFile() {
+    public void testLogFromRevision() {
         Git git = new Git(folder.getRoot());
 
         git.init();
 
         String fileName = "file.txt";
-        String fileContent = "zzz";
+        String fileContentFirst = "zzz";
+        String fileContentSecond = "aaa";
 
         try {
             File file = folder.newFile(fileName);
-            FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
+            FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
 
             git.add(file.toPath());
 
             git.commit("First commit!");
 
-            File objectsDir = folder.getRoot().toPath().resolve(".git").resolve("objects").toFile();
-            List<File> objectsContains = (List<File>)FileUtils.listFiles(objectsDir,
-                    TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+            FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", true);
 
-            for (File f : objectsContains) {
-                try (Scanner scanner = new Scanner(f)) {
-                    String label = scanner.next();
-                    if (label.equals("TREE")) {
-                        String blobLabel = scanner.next();
-                        String blobFileName = scanner.next();
-                        String blobFileHash = scanner.next();
+            git.add(file.toPath());
 
-                        assertThat(blobLabel).isEqualTo("blob");
-                        assertThat(blobFileName).isEqualTo(file.toString());
+            git.commit("Second commit!");
 
-                        blobFileHash += ".txt";
-                        File blobFileHashAbsolutePath = folder.getRoot().toPath()
-                                .resolve(".git").resolve("objects").resolve(blobFileHash).toFile();
-                        assertThat(objectsContains).contains(blobFileHashAbsolutePath);
-                    }
+            List<CommitInfo> logBoth = git.log();
+            CommitInfo firstF = null;
 
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+            for(CommitInfo curCommit : logBoth) {
+                curCommit.printCommitInfo();
+                if (curCommit.getRevisionNumber() == 1) {
+                    firstF = curCommit;
                 }
             }
+
+            List<CommitInfo> logSingle = git.log(1);
+            CommitInfo firstS = null;
+
+            for(CommitInfo curCommit : logSingle) {
+                curCommit.printCommitInfo();
+                if (curCommit.getRevisionNumber() == 1) {
+                    firstS = curCommit;
+                }
+            }
+
+            if (firstF != null && firstS != null) {
+                assertThat(firstF.getCommitInfo()).isEqualTo(firstS.getCommitInfo());
+            }
+
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("TestLog. Failed to write to temporary file");
         }
     }
 
     @Test
-    public void testCommitFile() {
-
+    public void testCheckoutRevisionChangeFileContent() {
         Git git = new Git(folder.getRoot());
 
         git.init();
 
         String fileName = "file.txt";
-        String fileContent = "zzz";
+        String fileContentFirst = "zzz";
+        String fileContentSecond = "aaa";
 
         try {
             File file = folder.newFile(fileName);
-            FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
+            FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
 
             git.add(file.toPath());
 
             git.commit("First commit!");
 
-            File objectsDir = folder.getRoot().toPath().resolve(".git").resolve("objects").toFile();
-            List<File> objectsContains = (List<File>)FileUtils.listFiles(objectsDir,
-                    TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 
-            for (File f : objectsContains) {
-                try (Scanner scanner = new Scanner(f)) {
-                    String label = scanner.next();
-                    if (label.equals("COMMIT")) {
-                        String cRevNumberActual = scanner.nextLine();
-                        String cRevNumberExpected = "COMMIT# 1";
-                        assertThat(cRevNumberActual).isEqualTo(cRevNumberExpected);
+            FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", true);
 
-                        scanner.nextLine(); //tree
-                        String cParentActual = scanner.nextLine(); // parent
-                        String cParentExpected = "parent -1";
-                        assertThat(cParentActual).isEqualTo(cParentExpected);
+            git.add(file.toPath());
 
-                        scanner.nextLine(); // date
-                        String cMsgActual = scanner.nextLine();
-                        String cMsgExpected = "message First commit!";
-                        assertThat(cMsgActual).isEqualTo(cMsgExpected);
-                        System.out.println("here");
-                    }
+            git.commit("Second commit!");
 
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                }
+            git.checkout(1);
+            try (Scanner scanner = new Scanner(file)) {
+                String fileContentActual = scanner.nextLine();
+
+                assertThat(fileContentActual).isEqualTo(fileContentFirst);
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
             }
-
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Test. testNumberOfFilesForAddAndCommitAndChange");
         }
     }
+
+    @Test
+    public void testCheckoutRevisionAddNewFiles() {
+        Git git = new Git(folder.getRoot());
+
+        git.init();
+
+        String fileNameFirst = "file1.txt";
+        String fileNameSecond = "file2.txt";
+        String fileContent = "zzz";
+
+        try {
+            File fileF = folder.newFile(fileNameFirst);
+            FileUtils.writeStringToFile(fileF, fileContent, "UTF-8", true);
+
+            git.add(fileF.toPath());
+            git.commit("First commit!");
+
+            File fileS = folder.newFile(fileNameSecond);
+            FileUtils.writeStringToFile(fileS, fileContent, "UTF-8", true);
+
+            git.add(fileS.toPath());
+            git.commit("Second commit!");
+
+            /* delete second file */
+            git.checkout(1);
+
+            assertThat(fileS).doesNotExist();
+
+        } catch (IOException e) {
+            System.err.println("Test. testNumberOfFilesForAddAndCommitAndChange");
+        }
+    }
+
+    @Test
+    public void testCheckoutFile() {
+        Git git = new Git(folder.getRoot());
+
+        git.init();
+
+        String fileName = "file.txt";
+        String fileContentFirst = "zzz";
+        String fileContentSecond = "aaa";
+
+        try {
+            File file = folder.newFile(fileName);
+            FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
+
+            git.add(file.toPath());
+            git.commit("First commit!");
+
+            FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", true);
+
+            /* delete changes in file */
+            git.checkout(file);
+
+            assertThat(file).hasContent(fileContentFirst);
+
+        } catch (IOException e) {
+            System.err.println("Test. testNumberOfFilesForAddAndCommitAndChange");
+        }
+    }
+
+    @Test
+    public void testRm() {
+        Git git = new Git(folder.getRoot());
+
+        git.init();
+
+        String fileName = "file.txt";
+        String fileContentFirst = "zzz";
+        String fileContentSecond = "aaa";
+
+        try {
+            File file = folder.newFile(fileName);
+            FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
+
+            git.add(file.toPath());
+            git.commit("First commit! Add file.txt");
+
+            git.rm(file);
+            assertThat(file).exists();
+
+            git.commit("Second commit! Delete file.txt");
+
+            FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", false);
+
+            /* delete changes in file */
+            git.checkout(1);
+
+            assertThat(file).hasContent(fileContentFirst);
+        } catch (IOException e) {
+            System.err.println("Test. testNumberOfFilesForAddAndCommitAndChange");
+        }
+    }
+
+    @Test
+    public void testStatus() {
+        Git git = new Git(folder.getRoot());
+
+        git.init();
+
+        String fileName = "file.txt";
+        String fileContentFirst = "zzz";
+        String fileContentSecond = "aaa";
+
+        try {
+            File file = folder.newFile(fileName);
+            FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
+
+            git.status();
+            git.add(file.toPath());
+            FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", false);
+            git.status();
+
+            git.commit("First commit!");
+
+            git.status();
+            git.add(file.toPath());
+            git.commit("Second commit! Delete file.txt");
+
+
+
+            /* delete changes in file */
+            git.checkout(1);
+
+            assertThat(file).hasContent(fileContentSecond);
+        } catch (IOException e) {
+            System.err.println("Test. testNumberOfFilesForAddAndCommitAndChange");
+        }
+    }
+
 }
