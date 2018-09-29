@@ -1,1 +1,1 @@
-# spbau_java_hw
+# HW for Java course
