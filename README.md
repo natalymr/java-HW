@@ -1,7 +1,7 @@
 # Java
 ------
 
-Task description
+## Task description
 
 ----- 
 
@@ -16,3 +16,10 @@ Task description
 * `log [from_revision]`
 * `checkout <revision>`
 * `checkout <files>` -- сбрасывает изменения в файлах
+
+------
+
+## Solution description
+
+По аналогии с `git` в `pwd` создается директория `.git`, в которой лежат все файлы, связанные с СКВ.
+Например, создается файл `index.txt`, в котором хранится список всех файлов, из `pwd`, за которыми `git` "следит"...
