@@ -153,6 +153,10 @@ public class TorrentFileSystemManager {
                  + name
                 );
 
+        if (!fileToReadFrom.exists()) {
+            return null;
+        }
+
         checkTorrentDirectoryExisting();
 
         TorrentFileInfo fileInfo = getFileInfoByID(id);

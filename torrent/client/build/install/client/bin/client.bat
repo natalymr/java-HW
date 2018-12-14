@@ -63,7 +63,7 @@ set CMD_LINE_ARGS=%*
 :execute
 @rem Setup the command line
 
-set CLASSPATH=%APP_HOME%\lib\torrent-1.0-SNAPSHOT.jar;%APP_HOME%\lib\client-1.0-SNAPSHOT.jar
+set CLASSPATH=%APP_HOME%\lib\torrent-1.0-SNAPSHOT.jar;%APP_HOME%\lib\commons-io-2.4.jar;%APP_HOME%\lib\client-1.0-SNAPSHOT.jar
 
 @rem Execute client
 "%JAVA_EXE%" %DEFAULT_JVM_OPTS% %JAVA_OPTS% %CLIENT_OPTS%  -classpath "%CLASSPATH%" torrent.network.Client %CMD_LINE_ARGS%

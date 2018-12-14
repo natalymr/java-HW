@@ -16,7 +16,7 @@ public class TorrentTrackerImpl implements TorrentTracker {
     public TorrentTrackerImpl() {
         filesVSclients   = new HashMap<>();
         availableClients = new HashSet<>();
-        lastID           = 0;
+        lastID           = 1;
     }
 
     public void addClient(TorrentClientInfo client) {
