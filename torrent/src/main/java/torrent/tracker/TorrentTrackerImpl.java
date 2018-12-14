@@ -62,10 +62,19 @@ public class TorrentTrackerImpl implements TorrentTracker {
     @Override
     public List<TorrentClientInfo> sources(int id) {
         Set<TorrentFileInfo> files = filesVSclients.keySet();
+        List<TorrentClientInfo> result = new ArrayList<>();
 
         for (TorrentFileInfo file : files) {
             if (file.getId() == id) {
-                return filesVSclients.get(file);
+
+                List<TorrentClientInfo> allClients = filesVSclients.get(file);
+                for (TorrentClientInfo client : allClients) {
+                    if (availableClients.contains(client)) {
+                        result.add(client);
+                    }
+                }
+
+                return result;
             }
         }
 
