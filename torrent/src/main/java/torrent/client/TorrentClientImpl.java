@@ -1,8 +1,8 @@
 package torrent.client;
 
 import torrent.fileSystemManager.TorrentFileInfo;
-import torrent.fileSystemManager.TorrentFileSystemManager;
-import torrent.fileSystemManager.TorrentFile;
+import torrent.fileSystemManager.TorrentClientFileSystemManager;
+import torrent.fileSystemManager.TorrentClientFile;
 import torrent.fileSystemManager.TorrentFilePart;
 
 import java.io.FileNotFoundException;
@@ -12,11 +12,11 @@ import java.util.*;
 
 public class TorrentClientImpl implements TorrentClient {
 
-    private Map<Integer, TorrentFile> storedFiles;
-    private TorrentFileSystemManager  fileSystemManager;
+    private Map<Integer, TorrentClientFile> storedFiles;
+    private TorrentClientFileSystemManager  fileSystemManager;
 
     public TorrentClientImpl() throws FileNotFoundException {
-        fileSystemManager = new TorrentFileSystemManager();
+        fileSystemManager = new TorrentClientFileSystemManager();
         storedFiles = fileSystemManager.getStoredFiles();
     }
 
@@ -35,7 +35,7 @@ public class TorrentClientImpl implements TorrentClient {
     }
 
     public void createTorrentFile(Path pwd, int id, String name, long size) throws IOException {
-        TorrentFile torrentFile = fileSystemManager.addNewTorrentFile(pwd, id, name, size);
+        TorrentClientFile torrentFile = fileSystemManager.addNewTorrentFile(pwd, id, name, size);
 
         storedFiles.put(id, torrentFile);
     }

@@ -1,10 +1,10 @@
 package torrent.network;
 
 import torrent.client.TorrentClientInfo;
-import torrent.fileSystemManager.TorrentFile;
+import torrent.fileSystemManager.TorrentClientFile;
 import torrent.fileSystemManager.TorrentFileInfo;
 import torrent.fileSystemManager.TorrentFilePart;
-import torrent.fileSystemManager.TorrentFileSystemManager;
+import torrent.fileSystemManager.TorrentClientFileSystemManager;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -16,10 +16,10 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 class Downloader {
-    private final TorrentFileSystemManager fileSystemManager;
+    private final TorrentClientFileSystemManager fileSystemManager;
 
     Downloader() {
-        fileSystemManager = new TorrentFileSystemManager();
+        fileSystemManager = new TorrentClientFileSystemManager();
     }
 
     boolean download(int id, List<TorrentClientInfo> sourceClients, Path pwd) throws IOException {
@@ -63,7 +63,7 @@ class Downloader {
             return false;
         }
 
-        TorrentFile torrentFile = new TorrentFile(fileInfo);
+        TorrentClientFile torrentFile = new TorrentClientFile(fileInfo);
         ExecutorService executor = Executors.newCachedThreadPool();
 
         for(Map.Entry<Integer, TorrentClientInfo> partVSclient : partNumberVSclient.entrySet()) {

@@ -2,21 +2,30 @@ package torrent.tracker;
 
 import torrent.client.TorrentClientInfo;
 import torrent.fileSystemManager.TorrentFileInfo;
+import torrent.fileSystemManager.TorrentTrackerFileSystemManager;
 
+import java.io.FileNotFoundException;
 import java.util.*;
 
 public class TorrentTrackerImpl implements TorrentTracker {
 
-    private static final long TIME_THRESHOLD = 5 * 60 * 1000;
+    private static final long                             TIME_THRESHOLD = 5 * 60 * 1000;
     private Map<TorrentFileInfo, List<TorrentClientInfo>> filesVSclients;
-    private Set<TorrentClientInfo> availableClients;
-    private Map<TorrentClientInfo, Long> clientVSlastTimePing;
-    private int lastID;
+    private Set<TorrentClientInfo>                        availableClients;
+    private Map<TorrentClientInfo, Long>                  clientVSlastTimePing;
+    private int futureID;
 
-    public TorrentTrackerImpl() {
+    public TorrentTrackerImpl() throws FileNotFoundException {
+        TorrentTrackerFileSystemManager fileSystemManager = new TorrentTrackerFileSystemManager();
+        // restore list of files
+        List<TorrentFileInfo> infoFiles = fileSystemManager.restoreAllFilesInfo();
         filesVSclients   = new HashMap<>();
+        for (TorrentFileInfo fileInfo : infoFiles) {
+            filesVSclients.put(fileInfo, new ArrayList<>());
+        }
+
         availableClients = new HashSet<>();
-        lastID           = 1;
+        futureID = fileSystemManager.getLastIDNumber() + 1;
     }
 
     public void addClient(TorrentClientInfo client) {
@@ -51,10 +60,10 @@ public class TorrentTrackerImpl implements TorrentTracker {
 
     @Override
     public int upload(String newFileName, long newFileSize) {
-        int result = lastID;
+        int result = futureID;
 
-        filesVSclients.put(new TorrentFileInfo(lastID, newFileName, newFileSize), new ArrayList<>());
-        lastID++;
+        filesVSclients.put(new TorrentFileInfo(futureID, newFileName, newFileSize), new ArrayList<>());
+        futureID++;
 
         return result;
     }

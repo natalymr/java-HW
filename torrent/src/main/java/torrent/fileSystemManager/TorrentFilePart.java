@@ -16,7 +16,7 @@ public class TorrentFilePart {
         this.fileInfo   = fileInfo;
         this.partNumber = partNumber;
 
-        TorrentFileSystemManager fileSystemManager = new TorrentFileSystemManager();
+        TorrentClientFileSystemManager fileSystemManager = new TorrentClientFileSystemManager();
         this.partFileContent   = fileSystemManager.createNewFilePart(
                 fileInfo.getId(),
                 partNumber,
