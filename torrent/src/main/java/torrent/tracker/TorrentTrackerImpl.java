@@ -20,8 +20,10 @@ public class TorrentTrackerImpl implements TorrentTracker {
         // restore list of files
         List<TorrentFileInfo> infoFiles = fileSystemManager.restoreAllFilesInfo();
         filesVSclients   = new HashMap<>();
-        for (TorrentFileInfo fileInfo : infoFiles) {
-            filesVSclients.put(fileInfo, new ArrayList<>());
+        if (infoFiles != null) {
+            for (TorrentFileInfo fileInfo : infoFiles) {
+                filesVSclients.put(fileInfo, new ArrayList<>());
+            }
         }
 
         availableClients = new HashSet<>();

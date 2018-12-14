@@ -16,7 +16,7 @@ public class Tracker {
     private static final int  TRACKER_PORT  = 8081;
     private static final long TIME_TO_SLEEP = 60_000;
 
-    static public void main(String[] args) {
+    static public void main(String[] args) throws FileNotFoundException {
         TorrentTrackerImpl tracker = new TorrentTrackerImpl();
 
         ExecutorService executor = Executors.newCachedThreadPool();

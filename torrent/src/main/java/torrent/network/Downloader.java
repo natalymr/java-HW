@@ -1,7 +1,7 @@
 package torrent.network;
 
 import torrent.client.TorrentClientInfo;
-import torrent.fileSystemManager.TorrentClientFile;
+import torrent.fileSystemManager.TorrentFile;
 import torrent.fileSystemManager.TorrentFileInfo;
 import torrent.fileSystemManager.TorrentFilePart;
 import torrent.fileSystemManager.TorrentClientFileSystemManager;
@@ -63,7 +63,7 @@ class Downloader {
             return false;
         }
 
-        TorrentClientFile torrentFile = new TorrentClientFile(fileInfo);
+        TorrentFile torrentFile = new TorrentFile(fileInfo);
         ExecutorService executor = Executors.newCachedThreadPool();
 
         for(Map.Entry<Integer, TorrentClientInfo> partVSclient : partNumberVSclient.entrySet()) {

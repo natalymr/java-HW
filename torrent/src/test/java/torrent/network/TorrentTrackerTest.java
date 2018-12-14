@@ -4,6 +4,7 @@ import org.junit.Test;
 import torrent.fileSystemManager.TorrentFileInfo;
 import torrent.tracker.TorrentTrackerImpl;
 
+import java.io.FileNotFoundException;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -11,7 +12,7 @@ import static org.junit.Assert.*;
 public class TorrentTrackerTest {
 
     @Test
-    public void testListUpload() {
+    public void testListUpload() throws FileNotFoundException {
         TorrentTrackerImpl tracker = new TorrentTrackerImpl();
 
         String fileName1 = "fileName1";

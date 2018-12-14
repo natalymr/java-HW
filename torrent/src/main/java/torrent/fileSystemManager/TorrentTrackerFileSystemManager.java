@@ -16,17 +16,21 @@ public class TorrentTrackerFileSystemManager extends TorrentFileSystemManager {
         List<TorrentFileInfo> result = new ArrayList<>();
 
         File[] fileList = torrentDirectory.listFiles();
-        for (File file : fileList) {
-            String fileName = file.getName();
-            if (file.isFile() && fileName.endsWith(fileInfoExtension)) {
-                String idInString = fileName.substring(
-                        0,
-                        fileName.length() - fileInfoExtension.length()
-                );
-                int id = Integer.parseInt(idInString);
+        if (fileList != null) {
+            for (File file : fileList) {
 
-                TorrentFileInfo torrentFileInfo = getFileInfoByID(id);
-                result.add(torrentFileInfo);
+                System.out.println(file.getName());
+                String fileName = file.getName();
+                if (file.isFile() && fileName.endsWith(fileInfoExtension)) {
+                    String idInString = fileName.substring(
+                            0,
+                            fileName.length() - fileInfoExtension.length()
+                    );
+                    int id = Integer.parseInt(idInString);
+
+                    TorrentFileInfo torrentFileInfo = getFileInfoByID(id);
+                    result.add(torrentFileInfo);
+                }
             }
         }
 
@@ -37,18 +41,22 @@ public class TorrentTrackerFileSystemManager extends TorrentFileSystemManager {
         List<Integer> allID = new ArrayList<>();
 
         File[] fileList = torrentDirectory.listFiles();
-        for (File file : fileList) {
-            String fileName = file.getName();
-            if (file.isFile() && fileName.endsWith(fileInfoExtension)) {
-                String idInString = fileName.substring(
-                        0,
-                        fileName.length() - fileInfoExtension.length()
-                );
-                allID.add(Integer.parseInt(idInString));
+        if (fileList != null) {
+            for (File file : fileList) {
+                String fileName = file.getName();
+                if (file.isFile() && fileName.endsWith(fileInfoExtension)) {
+                    String idInString = fileName.substring(
+                            0,
+                            fileName.length() - fileInfoExtension.length()
+                    );
+                    allID.add(Integer.parseInt(idInString));
+                }
             }
+
+            allID.sort(Comparator.naturalOrder());
+            return allID.get(allID.size() - 1);
         }
 
-        allID.sort(Comparator.naturalOrder());
-        return allID.get(allID.size() - 1);
+        return 0;
     }
 }

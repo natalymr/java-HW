@@ -8,12 +8,12 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TorrentClientFile extends TorrentClientFileSystemManager {
+public class TorrentFile extends TorrentClientFileSystemManager {
 
     private TorrentFileInfo       fileInfo;
     private List<TorrentFilePart> parts;
 
-    public TorrentClientFile(TorrentFileInfo torrentFileInfo) {
+    public TorrentFile(TorrentFileInfo torrentFileInfo) {
         this.fileInfo = torrentFileInfo;
         this.parts    = new ArrayList<>();
     }

@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Scanner;
 
 public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
     private static final String filePartExtension = ".part";
@@ -46,38 +45,44 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
         return newFile;
     }
 
-    public Map<Integer, TorrentClientFile> getStoredFiles() throws FileNotFoundException {
-        Map<Integer, TorrentClientFile> result = new HashMap<>();
+    public Map<Integer, TorrentFile> getStoredFiles() throws FileNotFoundException {
+        Map<Integer, TorrentFile> result = new HashMap<>();
         if (!checkTorrentDirectoryExisting()) {
             return result;
         }
 
         File[] fileList = torrentDirectory.listFiles();
-        for (File file : fileList) {
-            if (file.isDirectory()) {
-                int id = Integer.parseInt(file.getName());
-                TorrentFileInfo torrentFileInfo = getFileInfoByID(id);
-                TorrentClientFile torrentFile = new TorrentClientFile(torrentFileInfo);
+        if (fileList != null) {
 
-                File[] filesInSubDir = file.listFiles();
-                for (File part : filesInSubDir) {
-                    String partName = part.getName();
-                    if (partName.endsWith(filePartExtension)) {
-                        int partNumber = Integer.parseInt(
-                                partName.substring(
-                                        0,
-                                        partName.length() - filePartExtension.length())
-                        );
-                        torrentFile.addNewPart(
-                                new TorrentFilePart(
-                                        torrentFileInfo,
-                                        partNumber,
-                                        part
-                                )
-                        );
+            for (File file : fileList) {
+                if (file.isDirectory()) {
+                    int id = Integer.parseInt(file.getName());
+                    TorrentFileInfo torrentFileInfo = getFileInfoByID(id);
+                    TorrentFile torrentFile = new TorrentFile(torrentFileInfo);
+
+                    File[] filesInSubDir = file.listFiles();
+                    if (filesInSubDir != null) {
+
+                        for (File part : filesInSubDir) {
+                            String partName = part.getName();
+
+                            if (partName.endsWith(filePartExtension)) {
+                                int partNumber = Integer.parseInt(
+                                        partName.substring(
+                                                0,
+                                                partName.length() - filePartExtension.length())
+                                );
+                                torrentFile.addNewPart(
+                                        new TorrentFilePart(
+                                                torrentFileInfo,
+                                                partNumber,
+                                                part
+                                        )
+                                );
+                            }
+                        }
                     }
                 }
-
             }
         }
 
@@ -101,7 +106,7 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
         return result;
     }
 
-    public TorrentClientFile addNewTorrentFile(Path pwd, int id, String name, long size) throws IOException {
+    public TorrentFile addNewTorrentFile(Path pwd, int id, String name, long size) throws IOException {
         File fileToReadFrom = new File(
                 pwd.toString()
                  + File.separator
@@ -115,7 +120,7 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
         checkTorrentDirectoryExisting();
 
         TorrentFileInfo fileInfo = getFileInfoByID(id);
-        TorrentClientFile result = new TorrentClientFile(fileInfo);
+        TorrentFile result = new TorrentFile(fileInfo);
 
         File dirID = createDirForFileParts(id);
 
