@@ -17,6 +17,8 @@ import java.util.Scanner;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class Client {
     static final int TRACKER_PORT = 8081;
@@ -33,29 +35,29 @@ public class Client {
         ExecutorService executor = Executors.newCachedThreadPool();
 
         // ping tracker every 5 minuets
-//        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-//        scheduledExecutor.scheduleWithFixedDelay(() -> {
-//                    try (Client2TrackerConnection pinger = new Client2TrackerConnection(
-//                            new Socket("localhost", TRACKER_PORT))) {
-//
-//                        pinger.executeUpdateCommand(port, client.getFilesCount(), client.getFilesID());
-//
-//                    } catch (UnknownHostException e) {
-//                        System.out.println("client: " +
-//                                "you will be unavailable for downloading from you: " +
-//                                "UnknownHostException: " + e.getLocalizedMessage());
-//                        e.printStackTrace();
-//                    } catch (IOException e) {
-//                        System.out.println("client: " +
-//                                "you will be unavailable for downloading from you: " +
-//                                "IOException: " + e.getLocalizedMessage());
-//                        e.printStackTrace();
-//                    }
-//                },
-//                20,
-//                10,
-//                TimeUnit.SECONDS
-//        );
+        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+        scheduledExecutor.scheduleWithFixedDelay(() -> {
+                    try (Client2TrackerConnection pinger = new Client2TrackerConnection(
+                            new Socket("localhost", TRACKER_PORT))) {
+
+                        pinger.executeUpdateCommand(port, client.getFilesCount(), client.getFilesID());
+
+                    } catch (UnknownHostException e) {
+                        System.out.println("client: " +
+                                "you will be unavailable for downloading from you: " +
+                                "UnknownHostException: " + e.getLocalizedMessage());
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        System.out.println("client: " +
+                                "you will be unavailable for downloading from you: " +
+                                "IOException: " + e.getLocalizedMessage());
+                        e.printStackTrace();
+                    }
+                },
+                5,
+                5,
+                TimeUnit.MINUTES
+        );
 
         // connect with other client
         Client2ClientServer server = new Client2ClientServer(client, port);
