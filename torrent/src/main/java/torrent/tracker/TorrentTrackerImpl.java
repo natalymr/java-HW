@@ -80,7 +80,6 @@ public class TorrentTrackerImpl implements TorrentTracker {
     @Override
     public List<TorrentClientInfo> sources(int id) {
         Set<TorrentFileInfo> files = filesVSclients.keySet();
-        System.out.println("sources len " + files.size());
         for (TorrentFileInfo file : files) {
             System.out.println(file.getName());
         }
@@ -92,7 +91,6 @@ public class TorrentTrackerImpl implements TorrentTracker {
                 Set<TorrentClientInfo> allClients = new HashSet<>(filesVSclients.get(file));
                 for (TorrentClientInfo client : allClients) {
                     if (availableClients.contains(client)) {
-                        System.out.println("file " + file.getName() + " is available on client " + client.getPort());
                         result.add(client);
                     }
                 }
@@ -106,9 +104,6 @@ public class TorrentTrackerImpl implements TorrentTracker {
 
     @Override
     public boolean update(TorrentClientInfo clientInfo, List<Integer> fileIDs) {
-        for (Integer id : fileIDs) {
-            System.out.printf("update: client port = %d; id = %d \n", clientInfo.getPort(), id);
-        }
 
         Set<TorrentFileInfo> files = filesVSclients.keySet();
 

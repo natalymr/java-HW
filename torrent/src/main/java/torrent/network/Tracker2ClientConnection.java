@@ -123,7 +123,6 @@ class Tracker2ClientConnection extends Connection {
         short clientPort = inputData.readShort();
         int count = inputData.readInt();
         List<Integer> filesID = readFilesID(count);
-        System.out.printf("update: read array of clients filesID size = %d and must be count = %d\n", filesID.size(), count);
 
         return new ClientFilesUpdate(clientPort, filesID);
     }

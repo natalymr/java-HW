@@ -94,8 +94,6 @@ public class Tracker {
                                     System.out.println("tracker: undefined request");
                             }
                         }
-
-                        System.out.println("Request " + requestByte + " is handled!");
                     }
                 }
             } catch (IOException ignored) {
