@@ -1,5 +1,7 @@
 package torrent.fileSystemManager;
 
+import java.util.Objects;
+
 public class TorrentFileInfo {
 
     private final int    id;
@@ -22,5 +24,20 @@ public class TorrentFileInfo {
 
     public long getSize() {
         return size;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        TorrentFileInfo fileInfo = (TorrentFileInfo) o;
+        return id == fileInfo.id &&
+                size == fileInfo.size &&
+                Objects.equals(name, fileInfo.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, size);
     }
 }

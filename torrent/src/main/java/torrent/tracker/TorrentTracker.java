@@ -1,5 +1,6 @@
 package torrent.tracker;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -20,7 +21,7 @@ interface TorrentTracker {
      * @param newFileSize - размер файла
      * @return - id — идентификатор файла
      */
-    int upload(String newFileName, long newFileSize);
+    int upload(String newFileName, long newFileSize) throws IOException;
 
     /**
      * возвращает список клиентов, владеющих определенным файлов целиком или некоторыми его частями

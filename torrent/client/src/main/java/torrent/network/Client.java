@@ -2,9 +2,10 @@ package torrent.network;
 
 import torrent.client.TorrentClientImpl;
 import torrent.client.TorrentClientInfo;
+import torrent.fileSystemManager.TorrentClientFileSystemManager;
 import torrent.fileSystemManager.TorrentFileInfo;
 
-import java.io.FileNotFoundException;
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -20,158 +21,213 @@ import java.util.concurrent.Executors;
 public class Client {
     static final int TRACKER_PORT = 8081;
 
-    static public void main(String[] args) throws FileNotFoundException {
+    static public void main(String[] args) throws IOException {
         short port = Short.parseShort(args[0]);
-        final long TIME_TO_SLEEP = 3 * 60 * 1000;
 
-        TorrentClientImpl client = new TorrentClientImpl();
+        TorrentClientFileSystemManager fileSystemManager = new TorrentClientFileSystemManager(
+                "/tmp/torrentClientDirectory" + port
+        );
+
+        TorrentClientImpl client = new TorrentClientImpl(fileSystemManager);
 
         ExecutorService executor = Executors.newCachedThreadPool();
 
+        // ping tracker every 5 minuets
+//        ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
+//        scheduledExecutor.scheduleWithFixedDelay(() -> {
+//                    try (Client2TrackerConnection pinger = new Client2TrackerConnection(
+//                            new Socket("localhost", TRACKER_PORT))) {
+//
+//                        pinger.executeUpdateCommand(port, client.getFilesCount(), client.getFilesID());
+//
+//                    } catch (UnknownHostException e) {
+//                        System.out.println("client: " +
+//                                "you will be unavailable for downloading from you: " +
+//                                "UnknownHostException: " + e.getLocalizedMessage());
+//                        e.printStackTrace();
+//                    } catch (IOException e) {
+//                        System.out.println("client: " +
+//                                "you will be unavailable for downloading from you: " +
+//                                "IOException: " + e.getLocalizedMessage());
+//                        e.printStackTrace();
+//                    }
+//                },
+//                20,
+//                10,
+//                TimeUnit.SECONDS
+//        );
+
         // connect with other client
-        executor.execute(() -> {
-            try (ServerSocket clientServer = new ServerSocket(port)) {
-
-                    while (true) {
-                        try (Client2ClientConnection c2c = new Client2ClientConnection(clientServer.accept())) {
-                            switch (c2c.readRequestByte()) {
-                                case 1:
-
-                                    int neededFileID = c2c.readNeededFiledID();
-
-                                    List<Integer> availableFileParts = client.stat(neededFileID);
-
-                                    c2c.writeAvailableFileParts(availableFileParts);
-
-                                    break;
-
-                                case 2:
-
-                                    FileGet fileToGet = c2c.readFileToGet();
-
-                                    c2c.writeTorrentFilePart(client.get(
-                                            fileToGet.getID(),
-                                            fileToGet.getPartNumber()
-                                    ));
-
-                                    break;
-
-                                default:
-                                    System.out.println("client: undefined request");
-                            }
-                        }
-                    }
-
-            } catch (IOException ignored) {}
-        });
+        Client2ClientServer server = new Client2ClientServer(client, port);
+        executor.execute(server);
 
         // parse command from command_line + connect to tracker
-        executor.execute(() -> {
-            while(true) {
-                try (Client2TrackerConnection c2t = new Client2TrackerConnection(
-                        new Socket("localhost", TRACKER_PORT))) {
-                    Path pwd = FileSystems.getDefault().getPath(".");
+        Path pwd = FileSystems.getDefault().getPath(".");
+        Scanner sc = new Scanner(System.in);
 
-                    Scanner sc = new Scanner(System.in);
-                    String command = sc.next();
+        while (sc.hasNext()) {
+            String command = sc.next();
 
-                    switch (command) {
-                        case "list":
-                            Set<TorrentFileInfo> listResult = c2t.executeListCommand();
+            try (Client2TrackerConnection c2t = new Client2TrackerConnection(
+                    new Socket("localhost", TRACKER_PORT))
+            ) {
 
-                            for (TorrentFileInfo fileInfo : listResult) {
-                                System.out.printf(
-                                        "id: %d; name %s; size: %d;\n",
-                                        fileInfo.getId(),
-                                        fileInfo.getName(),
-                                        fileInfo.getSize()
-                                );
-                            }
+                switch (command) {
+                    case "list":
+                        Set<TorrentFileInfo> listResult = c2t.executeListCommand();
 
-                            client.addListResultToTorrentFileSystem(listResult);
-
-                            break;
-                        case "upload":
-
-                            String newFileName = sc.next();
-                            long   newFileSize = Long.parseLong(sc.next());
-
-                            int uploadResult = c2t.executeUploadCommand(newFileName, newFileSize);
-
+                        for (TorrentFileInfo fileInfo : listResult) {
                             System.out.printf(
-                                    "File with name %s and size %d was uploaded.\nid: %d\n",
-                                    newFileName,
-                                    newFileSize,
-                                    uploadResult
+                                    "id: %d; name %s; size: %d;\n",
+                                    fileInfo.getId(),
+                                    fileInfo.getName(),
+                                    fileInfo.getSize()
                             );
+                        }
 
+                        try {
+                            client.addListResultToTorrentFileSystem(listResult);
+                        } catch (IOException e) {
+                            System.out.println("torrent client: do not save this info");
+                        }
+
+                        break;
+                    case "upload":
+
+                        String newFileName = sc.next();
+
+                        // get file size by name
+                        File newFile = new File(pwd.toString() + File.separator + newFileName);
+                        long newFileSize = newFile.length();
+
+                        int uploadResult = c2t.executeUploadCommand(newFileName, newFileSize);
+
+                        System.out.printf(
+                                "File with name %s and size %d was uploaded.\nid: %d\n",
+                                newFileName,
+                                newFileSize,
+                                uploadResult
+                        );
+
+                        try {
                             client.createTorrentFile(pwd, uploadResult, newFileName, newFileSize);
+                        } catch (IOException e) {
+                            System.out.println("torrent client: can not publish file " + newFileName);
+                            e.printStackTrace();
+                        }
 
-                            break;
-                        case "sources":
+                        c2t.executeUpdateCommand(port, client.getFilesCount(), client.getFilesID());
 
-                            int fileID = Integer.parseInt(sc.next());
+                        break;
+                    case "sources":
 
-                            List<TorrentClientInfo> sourcesResult = c2t.executeSourcesCommand(fileID);
+                        int fileID = sc.nextInt();
 
-                            System.out.printf(
-                                    "count of seeds = %d\n",
-                                    sourcesResult.size());
+                        List<TorrentClientInfo> sourcesResult = c2t.executeSourcesCommand(fileID);
 
-                            break;
-                        case "update":
+                        System.out.printf(
+                                "count of peers = %d\n",
+                                sourcesResult.size());
 
-                            boolean updateResult = c2t.executeUpdateCommand(port, client.getFilesCount(), client.getFilesID());
+                        break;
+                    case "update":
 
-                            if (updateResult) {
-                                System.out.println("update result: SUCCESS");
-                            } else {
-                                System.out.println("update result: FAIL");
-                            }
+                        boolean updateResult = c2t.executeUpdateCommand(
+                                port,
+                                client.getFilesCount(),
+                                client.getFilesID()
+                        );
 
-                            break;
-                        case "download":
-                            int id = Integer.parseInt(sc.next());
+                        if (updateResult) {
+                            System.out.println("update result: SUCCESS");
+                        } else {
+                            System.out.println("update result: FAIL");
+                        }
 
-                            List<TorrentClientInfo> sourceClients = c2t.executeSourcesCommand(id);
+                        break;
+                    case "download":
+                        int id = sc.nextInt();
 
-                            Downloader downloader = new Downloader();
-                            downloader.download(id, sourceClients, pwd);
+                        List<TorrentClientInfo> sourceClients = c2t.executeSourcesCommand(id);
 
-                        default:
-                            System.out.println("client: unknown command");
-                    }
-                } catch (UnknownHostException e) {
-                    System.out.println("client: can not connect to tracker: UnknownHostException: " + e.getLocalizedMessage());;
-                } catch (IOException e) {
-                    System.out.println("client: can not connect to tracker: IOException: " + e.getLocalizedMessage());
+                        Downloader downloader = new Downloader(fileSystemManager);
+                        downloader.download(id, sourceClients, pwd);
+                        break;
+                    case "exit":
+                        return;
+
+                    default:
+                        System.out.println("client: unknown command");
                 }
-
-            }
-
-        });
-
-        // ping tracker every 5 minuets
-        executor.execute(() -> {
-            try (Client2TrackerConnection pinger = new Client2TrackerConnection(
-                    new Socket("localhost", TRACKER_PORT))) {
-
-                pinger.executeUpdateCommand(port, client.getFilesCount(), client.getFilesID());
-                Thread.sleep(TIME_TO_SLEEP);
-
             } catch (UnknownHostException e) {
-                System.out.println("client: " +
-                        "you will be unavailable for downloading from you: " +
-                        "UnknownHostException: " + e.getLocalizedMessage());;
+                System.out.println("client: can not connect to tracker: UnknownHostException: " + e.getLocalizedMessage());
+                return;
             } catch (IOException e) {
-                System.out.println("client: " +
-                        "you will be unavailable for downloading from you: " +
-                        "IOException: " + e.getLocalizedMessage());
-            } catch (InterruptedException e) {
-                System.out.println("client: " +
-                        "you will be unavailable for downloading from you: " +
-                        "InterruptedException: " + e.getLocalizedMessage());
+                System.out.println("client: can not connect to tracker: IOException: ");e.printStackTrace();
+                return;
             }
-        });
+        }
+
+
+    }
+
+    private static class Client2ClientServer implements Runnable {
+        private final TorrentClientImpl client;
+        private final short port;
+        private final ServerSocket clientServer;
+        private final byte STAT = 1;
+        private final byte GET  = 2;
+
+        Client2ClientServer(TorrentClientImpl client, short port) throws IOException {
+            this.client = client;
+            this.port   = port;
+            clientServer = new ServerSocket(port);
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (!Thread.interrupted() && !clientServer.isClosed()) {
+                    System.out.println("Waiting for connection on port " + port);
+                    try (Client2ClientConnection c2c = new Client2ClientConnection(clientServer.accept())) {
+                        switch (c2c.readRequestByte()) {
+                            case STAT:
+                                System.out.println("STAT command");
+                                int neededFileID = c2c.readNeededFiledID();
+
+                                List<Integer> availableFileParts = client.stat(neededFileID);
+
+                                c2c.writeAvailableFileParts(availableFileParts);
+
+                                break;
+
+                            case GET:
+                                System.out.println("GET command");
+                                FileGet fileToGet = c2c.readFileToGet();
+                                System.out.println("part number " + fileToGet.getPartNumber());
+                                c2c.writeTorrentFilePart(client.get(
+                                        fileToGet.getID(),
+                                        fileToGet.getPartNumber()
+                                ));
+
+                                break;
+
+                            default:
+                                System.out.println("client: undefined request");
+                        }
+                    }
+                }
+            } catch (IOException ignored) {
+                ignored.printStackTrace();
+            }
+        }
+
+        void shutdown() {
+            try {
+                clientServer.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

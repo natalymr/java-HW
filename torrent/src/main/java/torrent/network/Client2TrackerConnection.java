@@ -62,12 +62,12 @@ class Client2TrackerConnection extends Connection {
     private List<TorrentClientInfo> readClientInfos(int count) throws IOException {
         List<TorrentClientInfo> result = new ArrayList<>();
 
+        byte ip[] = new byte[4];
+
         for (int i = 0; i < count; i++) {
+            inputStream.readFully(ip);
             result.add(new TorrentClientInfo(
-                    InetAddress.getByAddress(new byte[]{ inputStream.readByte(),
-                                                         inputStream.readByte(),
-                                                         inputStream.readByte(),
-                                                         inputStream.readByte() }),
+                    InetAddress.getByAddress(ip),
                     inputStream.readShort()
             ));
         }

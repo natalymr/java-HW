@@ -57,8 +57,8 @@ class Tracker2ClientConnection extends Connection {
         outputData = new DataOutputStream(socket.getOutputStream());
     }
 
-    byte readRequestType() throws IOException {
-        return inputData.readByte();
+    int readRequestType() throws IOException {
+        return inputData.read();
     }
 
     private void writeFileInfo(TorrentFileInfo file) throws IOException {
@@ -68,7 +68,7 @@ class Tracker2ClientConnection extends Connection {
     }
 
     void writeFileInfos(Set<TorrentFileInfo> fileInfos) throws IOException {
-        // wtite count of files
+        // write count of files
         outputData.writeInt(fileInfos.size());
 
         // write info about each file
@@ -80,8 +80,7 @@ class Tracker2ClientConnection extends Connection {
     }
 
     FileUpload readFileUpload() throws IOException {
-        FileUpload fileUpload = new FileUpload(inputData.readUTF(), inputData.readLong());
-        return fileUpload;
+        return new FileUpload(inputData.readUTF(), inputData.readLong());
     }
 
     void writeFileID(int newFileID) throws IOException {
@@ -124,6 +123,7 @@ class Tracker2ClientConnection extends Connection {
         short clientPort = inputData.readShort();
         int count = inputData.readInt();
         List<Integer> filesID = readFilesID(count);
+        System.out.printf("update: read array of clients filesID size = %d and must be count = %d\n", filesID.size(), count);
 
         return new ClientFilesUpdate(clientPort, filesID);
     }
@@ -131,6 +131,11 @@ class Tracker2ClientConnection extends Connection {
     void writeUpdateStatus(boolean status) throws IOException {
         outputData.writeBoolean(status);
 
+        outputData.flush();
+    }
+
+    public void writeEmptyClientInfos() throws IOException {
+        outputData.writeInt(0);
         outputData.flush();
     }
 }

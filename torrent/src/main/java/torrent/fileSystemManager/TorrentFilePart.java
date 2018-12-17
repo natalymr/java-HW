@@ -12,11 +12,11 @@ public class TorrentFilePart {
     private final int             partNumber;
     private final File            partFileContent;
 
-    public TorrentFilePart(TorrentFileInfo fileInfo, int partNumber, InputStream partFileContent) throws IOException {
+    public TorrentFilePart(TorrentClientFileSystemManager fileSystemManager,
+                           TorrentFileInfo fileInfo, int partNumber, InputStream partFileContent) throws IOException {
         this.fileInfo   = fileInfo;
         this.partNumber = partNumber;
 
-        TorrentClientFileSystemManager fileSystemManager = new TorrentClientFileSystemManager();
         this.partFileContent   = fileSystemManager.createNewFilePart(
                 fileInfo.getId(),
                 partNumber,

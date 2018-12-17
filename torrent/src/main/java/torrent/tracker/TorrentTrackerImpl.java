@@ -5,10 +5,12 @@ import torrent.fileSystemManager.TorrentFileInfo;
 import torrent.fileSystemManager.TorrentTrackerFileSystemManager;
 
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.*;
 
 public class TorrentTrackerImpl implements TorrentTracker {
 
+    private final TorrentTrackerFileSystemManager         fileSystemManager;
     private static final long                             TIME_THRESHOLD = 5 * 60 * 1000;
     private Map<TorrentFileInfo, List<TorrentClientInfo>> filesVSclients;
     private Set<TorrentClientInfo>                        availableClients;
@@ -16,10 +18,10 @@ public class TorrentTrackerImpl implements TorrentTracker {
     private int futureID;
 
     public TorrentTrackerImpl() throws FileNotFoundException {
-        TorrentTrackerFileSystemManager fileSystemManager = new TorrentTrackerFileSystemManager();
+        fileSystemManager = new TorrentTrackerFileSystemManager();
         // restore list of files
         List<TorrentFileInfo> infoFiles = fileSystemManager.restoreAllFilesInfo();
-        filesVSclients   = new HashMap<>();
+        filesVSclients = new HashMap<>();
         if (infoFiles != null) {
             for (TorrentFileInfo fileInfo : infoFiles) {
                 filesVSclients.put(fileInfo, new ArrayList<>());
@@ -27,6 +29,7 @@ public class TorrentTrackerImpl implements TorrentTracker {
         }
 
         availableClients = new HashSet<>();
+        clientVSlastTimePing = new HashMap<>();
         futureID = fileSystemManager.getLastIDNumber() + 1;
     }
 
@@ -51,8 +54,8 @@ public class TorrentTrackerImpl implements TorrentTracker {
         }
     }
 
-    public boolean isAvailable(TorrentClientInfo client) {
-        return availableClients.contains(client);
+    public boolean isCorrectID(int id) {
+        return id >= 0 && id < futureID;
     }
 
     @Override
@@ -61,11 +64,15 @@ public class TorrentTrackerImpl implements TorrentTracker {
     }
 
     @Override
-    public int upload(String newFileName, long newFileSize) {
+    public int upload(String newFileName, long newFileSize) throws IOException {
         int result = futureID;
 
-        filesVSclients.put(new TorrentFileInfo(futureID, newFileName, newFileSize), new ArrayList<>());
+        TorrentFileInfo fileInfo = new TorrentFileInfo(futureID, newFileName, newFileSize);
+
+        filesVSclients.put(fileInfo, new ArrayList<>());
         futureID++;
+
+        fileSystemManager.addNewInfoFile(fileInfo);
 
         return result;
     }
@@ -73,14 +80,19 @@ public class TorrentTrackerImpl implements TorrentTracker {
     @Override
     public List<TorrentClientInfo> sources(int id) {
         Set<TorrentFileInfo> files = filesVSclients.keySet();
+        System.out.println("sources len " + files.size());
+        for (TorrentFileInfo file : files) {
+            System.out.println(file.getName());
+        }
         List<TorrentClientInfo> result = new ArrayList<>();
 
         for (TorrentFileInfo file : files) {
             if (file.getId() == id) {
 
-                List<TorrentClientInfo> allClients = filesVSclients.get(file);
+                Set<TorrentClientInfo> allClients = new HashSet<>(filesVSclients.get(file));
                 for (TorrentClientInfo client : allClients) {
                     if (availableClients.contains(client)) {
+                        System.out.println("file " + file.getName() + " is available on client " + client.getPort());
                         result.add(client);
                     }
                 }
@@ -94,6 +106,10 @@ public class TorrentTrackerImpl implements TorrentTracker {
 
     @Override
     public boolean update(TorrentClientInfo clientInfo, List<Integer> fileIDs) {
+        for (Integer id : fileIDs) {
+            System.out.printf("update: client port = %d; id = %d \n", clientInfo.getPort(), id);
+        }
+
         Set<TorrentFileInfo> files = filesVSclients.keySet();
 
         Map<Integer, TorrentFileInfo> idVSTorrentFileInfo = new HashMap<>();

@@ -12,7 +12,7 @@ public class Connection implements AutoCloseable {
         this.socket = socket;
     }
 
-    public InetAddress getIP() {
+    InetAddress getIP() {
         return socket.getInetAddress();
     }
 

@@ -5,6 +5,8 @@ import org.apache.commons.io.IOUtils;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -12,8 +14,8 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
     private static final String filePartExtension = ".part";
     private static final int    filePartSize      = 10 * 1_000_000;
 
-    public TorrentClientFileSystemManager() {
-        super("/tmp/torrentClientDirectory");
+    public TorrentClientFileSystemManager(String dirName) {
+        super(dirName);
     }
 
     public int getFilePartSize() {
@@ -32,17 +34,20 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
 
         File newFile = new File(newFileName);
         if (newFile.exists()) {
+            IOUtils.closeQuietly(inputStream);
             return newFile;
         }
 
-        newFile.createNewFile();
+        if (newFile.createNewFile()) {
+            // copy content
+            Files.copy(inputStream, newFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
 
-        // copy content
-        Files.copy(inputStream, newFile.toPath());
+            IOUtils.closeQuietly(inputStream);
 
-        IOUtils.closeQuietly(inputStream);
+            return newFile;
+        }
 
-        return newFile;
+        return null;
     }
 
     public Map<Integer, TorrentFile> getStoredFiles() throws FileNotFoundException {
@@ -52,8 +57,7 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
         }
 
         File[] fileList = torrentDirectory.listFiles();
-        if (fileList != null) {
-
+        if (fileList != null && fileList.length > 0) {
             for (File file : fileList) {
                 if (file.isDirectory()) {
                     int id = Integer.parseInt(file.getName());
@@ -61,7 +65,7 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
                     TorrentFile torrentFile = new TorrentFile(torrentFileInfo);
 
                     File[] filesInSubDir = file.listFiles();
-                    if (filesInSubDir != null) {
+                    if (filesInSubDir != null && filesInSubDir.length > 0) {
 
                         for (File part : filesInSubDir) {
                             String partName = part.getName();
@@ -82,15 +86,14 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
                             }
                         }
                     }
+
+                    result.put(id, torrentFile);
                 }
             }
         }
 
         return result;
     }
-
-
-
 
 
     private File createDirForFileParts(int id) {
@@ -119,22 +122,26 @@ public class TorrentClientFileSystemManager extends TorrentFileSystemManager {
 
         checkTorrentDirectoryExisting();
 
-        TorrentFileInfo fileInfo = getFileInfoByID(id);
+        TorrentFileInfo fileInfo = new TorrentFileInfo(id, name, size);
+        addNewInfoFile(fileInfo);
+
         TorrentFile result = new TorrentFile(fileInfo);
 
         File dirID = createDirForFileParts(id);
 
-        int totalPartsCount = (int)(size / ((double) size)) + 1;
-        try(FileInputStream reader = new FileInputStream(fileToReadFrom)) {
-            for (int curPartNumber = 1; curPartNumber < totalPartsCount; curPartNumber++) {
-                byte[] bytesArray = new byte[filePartSize];
-                int offSet = (curPartNumber - 1) * filePartSize;
-                reader.read(bytesArray, offSet, filePartSize);
+        int totalPartsCount = (int)Math.ceil(size / ((double) filePartSize));
+
+        try (FileInputStream reader = new FileInputStream(fileToReadFrom)) {
+            byte[] buffer = new byte[filePartSize];
+            for (int partNumber = 0; partNumber < totalPartsCount; partNumber++) {
+                int count = reader.read(buffer);
+                byte[] byteArrayToWriteFrom = Arrays.copyOfRange(buffer, 0, count);
                 result.addNewPart(
                         new TorrentFilePart(
+                                this,
                                 fileInfo,
-                                curPartNumber,
-                                new ByteArrayInputStream(bytesArray)
+                                partNumber,
+                                new ByteArrayInputStream(byteArrayToWriteFrom)
                         )
                 );
             }

@@ -13,10 +13,11 @@ public class TorrentTrackerFileSystemManager extends TorrentFileSystemManager {
     }
 
     public List<TorrentFileInfo> restoreAllFilesInfo() throws FileNotFoundException {
+        checkTorrentDirectoryExisting();
         List<TorrentFileInfo> result = new ArrayList<>();
 
         File[] fileList = torrentDirectory.listFiles();
-        if (fileList != null) {
+        if (fileList != null && fileList.length > 0) {
             for (File file : fileList) {
 
                 System.out.println(file.getName());
@@ -41,7 +42,7 @@ public class TorrentTrackerFileSystemManager extends TorrentFileSystemManager {
         List<Integer> allID = new ArrayList<>();
 
         File[] fileList = torrentDirectory.listFiles();
-        if (fileList != null) {
+        if (fileList != null && fileList.length > 0) {
             for (File file : fileList) {
                 String fileName = file.getName();
                 if (file.isFile() && fileName.endsWith(fileInfoExtension)) {
@@ -57,6 +58,6 @@ public class TorrentTrackerFileSystemManager extends TorrentFileSystemManager {
             return allID.get(allID.size() - 1);
         }
 
-        return 0;
+        return -1;
     }
 }

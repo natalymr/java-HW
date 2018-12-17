@@ -3,10 +3,7 @@ package torrent.network;
 import torrent.fileSystemManager.TorrentFileInfo;
 import torrent.fileSystemManager.TorrentFilePart;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -104,14 +101,22 @@ class Client2ClientConnection extends Connection {
         return new StatResult(count, partsNumber);
     }
 
-    TorrentFilePart sendGetRequest(int id, int partNumber, TorrentFileInfo fileInfo, int partSize) throws IOException {
+    byte[] sendGetRequest(int id, int partNumber, long size, int partCount, int partSize) throws IOException {
         outputData.writeByte(2);
         outputData.writeInt(id);
         outputData.writeInt(partNumber);
         outputData.flush();
 
-        byte[] byteArray = new byte[partSize];
+        int bytesCountToRead;
+        if (partNumber == partCount - 1) {
+            bytesCountToRead = (int) (size - (partCount - 1) * partSize);
+        } else {
+            bytesCountToRead = partSize;
+        }
+
+        byte[] byteArray = new byte[bytesCountToRead];
         inputData.readFully(byteArray);
-        return new TorrentFilePart(fileInfo, partNumber, new ByteArrayInputStream(byteArray));
+
+        return byteArray;
     }
 }
