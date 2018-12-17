@@ -16,8 +16,6 @@ import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 class Downloader {
     private final TorrentClientFileSystemManager fileSystemManager;
@@ -46,11 +44,9 @@ class Downloader {
 
         // check whether all parts of file now is available
         for (TorrentClientInfo sourceClient : sourceClients) {
-            System.out.println("try to connect to " + sourceClient.getPort());
             try (Client2ClientConnection knocker = new Client2ClientConnection(
                     new Socket(sourceClient.getIP(), sourceClient.getPort()))
             ) {
-                System.out.println("i have connected to " + sourceClient.getPort());
                 StatResult availableAtThisClientParts = knocker.sendStatRequest(id);
                 List<Integer> partsNumber = availableAtThisClientParts.getPartsNumber();
                 for (Integer partNumber : partsNumber) {
@@ -72,7 +68,6 @@ class Downloader {
         }
 
         TorrentFile torrentFile = new TorrentFile(fileInfo);
-        System.out.println("create new Torrent File");
         ExecutorService executor = Executors.newCachedThreadPool();
         CountDownLatch LATCH = new CountDownLatch(partsCount);
 
@@ -86,7 +81,6 @@ class Downloader {
                     ) {
 
                     int partNumber = partVSclient.getKey();
-                    System.out.println("before downloading " + partNumber + " part");
                     byte[] fileContent = downloader.sendGetRequest(
                             id,
                             partNumber,
@@ -95,7 +89,6 @@ class Downloader {
                             fileSystemManager.getFilePartSize()
                     );
 
-                    System.out.println("have got part " + partNumber);
                     TorrentFilePart part = new TorrentFilePart(
                             fileSystemManager,
                             fileInfo,
@@ -115,23 +108,9 @@ class Downloader {
             });
         }
 
-        System.out.println("have got all parts");
         while (LATCH.getCount() > 0);
         torrentFile.mergeAllPartAndSaveInPWD(pwd, fileSystemManager.getFilePartSize());
 
-        System.out.println("merged all parts");
-
         return true;
     }
-
-//    private boolean allPartsIsNotDownloaded(AtomicBoolean[] barrier) {
-//        boolean result = false;
-//        for (AtomicBoolean atomicBoolean : barrier) {
-//            if (!atomicBoolean.get()) {
-//                return true;
-//            }
-//        }
-//
-//        return false;
-//    }
 }

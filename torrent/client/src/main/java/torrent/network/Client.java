@@ -153,7 +153,10 @@ public class Client {
                         List<TorrentClientInfo> sourceClients = c2t.executeSourcesCommand(id);
 
                         Downloader downloader = new Downloader(fileSystemManager);
-                        downloader.download(id, sourceClients, pwd);
+                        boolean downloadStatus = downloader.download(id, sourceClients, pwd);
+                        if (downloadStatus) {
+                            System.out.println("File with id " + id + " was successfully downloaded");
+                        }
                         break;
                     case "exit":
                         return;
