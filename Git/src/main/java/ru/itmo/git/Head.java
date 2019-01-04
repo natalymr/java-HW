@@ -7,16 +7,23 @@ import java.io.IOException;
 import java.nio.file.Path;
 
 class Head {
+    /* head's file */
+    private File headFile;
 
-    private File HeadFile;
+    /* removing magic constant */
+    private final String ENCODING = "UTF-8";
 
+    /**
+     * Constructor
+     * @param pathToGit - where .git/HEAD.txt file will be created
+     */
     Head(Path pathToGit) {
         String indexFileName = pathToGit.toString() + File.separator + "HEAD.txt";
-        HeadFile = new File(indexFileName);
+        headFile = new File(indexFileName);
 
-        if (!HeadFile.exists()) {
+        if (!headFile.exists()) {
             try {
-                HeadFile.createNewFile();
+                headFile.createNewFile();
             } catch (IOException e) {
                 System.err.println("Index constructor. Failed to create index file.");
                 e.printStackTrace();
@@ -24,9 +31,17 @@ class Head {
         }
     }
 
-    public void setHead(Integer newHash) {
+    /**
+     * Constructor
+     * @param oldHeadFile - it was git repo before and it was its head file
+     */
+    Head(File oldHeadFile) {
+        headFile = oldHeadFile;
+    }
+
+    void setHead(String newHash) {
         try {
-            FileUtils.writeStringToFile(HeadFile, Integer.toString(newHash), "UTF-8", false);
+            FileUtils.writeStringToFile(headFile, newHash, ENCODING, false);
         } catch (IOException e) {
             System.err.println("Head. changeHead. Failed to write to HEAD.txt.");
             e.printStackTrace();
@@ -35,19 +50,11 @@ class Head {
 
     }
 
-    public Integer getHead() {
-        String result = "-1";
-        try {
-            result = FileUtils.readFileToString(HeadFile, "UTF-8");
-        } catch (IOException e) {
-            System.err.println("Head. getHead. Failed to read HEAD.txt.");
-            e.printStackTrace();
-        }
-
-        return Integer.parseInt(result);
+    String getHead() throws IOException {
+        return FileUtils.readFileToString(headFile, ENCODING);
     }
 
-    public boolean isEmpty() {
-        return HeadFile == null || HeadFile.length() == 0;
+    boolean isEmpty() {
+        return headFile == null || headFile.length() == 0;
     }
 }

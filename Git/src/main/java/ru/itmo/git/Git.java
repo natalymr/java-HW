@@ -4,6 +4,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -19,73 +20,111 @@ class Git {
     private Head head;
     private ObjectsDir objects;
 
-    /* git's structures */
-    private final GitGraph gitGraph;
+    /* git's structure */
+    private GitGraph gitGraph;
 
     /**
      * Constructor
      * @param rootDir - where .git dir will be created
      */
      Git(File rootDir) {
-        pwd = rootDir.getAbsolutePath();
+        pwd      = rootDir.getAbsolutePath();
 
-        gitPath = null;
-        index = null;
-        head = null;
-        objects = null;
+        gitPath  = null;
+        index    = null;
+        head     = null;
+        objects  = null;
 
-        gitGraph = new GitGraph();
+        gitGraph = null;//new GitGraph();
     }
 
     /**
      * Init
      * Create git dir and other git's files and directories
      */
-    public void init() {
+    void init() throws IOException {
 
-        String gitDirName = pwd + File.separator + ".git";
+        String gitDirName = pwd + File.separator + ".mygit";
 
-        // create .git
+        /* create .git */
         File gitDir = new File(gitDirName);
         if (!gitDir.exists()) {
             if (!gitDir.mkdir()) {
-                System.out.println("git init failed");
-
-                return;
+                throw new FileNotFoundException("mygit: init");
             }
         }
         gitPath = gitDir.toPath();
 
-        // create .git/objects
+        /* create .git/objects */
         objects = new ObjectsDir(gitPath);
 
-        // create .git/index.txt
+        /* create .git/index.txt */
         index = new Index(gitPath);
 
-        // create .git/HEAD.txt
+        /* create .git/HEAD.txt */
         head = new Head(gitPath);
+
+        /* create gitGraph*/
+        gitGraph = new GitGraph(gitPath, head, objects, index);
+    }
+
+    /**
+     * Open
+     */
+    void open() throws IOException {
+
+        String gitDirName = pwd + File.separator + ".mygit";
+
+        File gitDir     = new File(gitDirName);
+        File objectsDir = new File(gitDirName + File.separator + "objects");
+        File indexFile  = new File(gitDirName + File.separator + "index.txt");
+        File headFile   = new File(gitDirName + File.separator + "HEAD.txt");
+
+
+        /* check that there are all git's files */
+        if (!gitDir.exists() ||
+                !objectsDir.exists() ||
+                !indexFile.exists() ||
+                !headFile.exists()) {
+
+            throw new FileNotFoundException("mygit: open");
+        } else {
+            gitPath  = new File(gitDirName).toPath();
+            objects  = new ObjectsDir(objectsDir);
+            index    = new Index(indexFile);
+            head     = new Head(headFile);
+        }
+
+        /* restore gitGraph */
+        gitGraph = new GitGraph(gitPath, head, objects, index);
     }
 
     /**
      * Add
      * Add file for
-     * @param pathToFile a file that will be added
+     * @param pathToFile the file or the dir that will be added
      */
-    public void add(Path pathToFile) {
-        /* create blobFile for this file and get hash(blobFileContent) */
-        Integer hash = objects.createNewBlobFile(pathToFile);
+    void add(Path pathToFile) throws IOException {
 
-        /* parse indexFile in map<String, Integer> */
-        Map<String, Integer> indexFileInMap = index.convertToMap();
+        /* create blobFile or treeFile for inputFile and get hash(fileContent) */
+        String hash = "";
+        index.addNewFileForChecking(pathToFile.toString());
+        if (Files.isDirectory(pathToFile)) {
 
-        /* if (there is this blob file in index.txt) {
-                just replace hash
-           } else {
-                add new file and its hash } */
-        if (indexFileInMap.containsKey(pathToFile.toString())) {
-            index.replaceHash(indexFileInMap.get(pathToFile.toString()), hash);
+            /* list all files in dir */
+            File[] fileList = pathToFile.toFile().listFiles();
+            if (fileList != null && fileList.length > 0) {
+                /* iterate of all files in this dir
+                   if cur file is file, just add this file
+                   if cur file is subdir,  just add recursive call add for it */
+                for (File curFile : fileList) {
+                    index.addNewFileForChecking(curFile.toString());
+                }
+            }
+
+            hash = objects.createNewTreeFile(pathToFile, index);
         } else {
-            index.addNewFile(pathToFile.toString(), hash);
+            hash = objects.createNewBlobFile(pathToFile, index);
         }
     }
 
@@ -94,24 +133,32 @@ class Git {
      * Commit files
      * @param commitMessage - a message of this commit
      */
-    public void commit(String commitMessage) {
-        Integer hash;
+    void commit(String commitMessage) throws IOException {
+        /* compute all accessory info for commit */
+        Path pathPWD = Paths.get(pwd);
+        /* parse indexFile in map<String - fileName, String - fileContentHash> */
+        String hashOfTreeFileForRoot = objects.createNewTreeFile(pathPWD, index);
 
-        // compute all accessory info for commit
-        Integer hashOfTreeFileForRoot = objects.createNewTreeFile(Paths.get(pwd), index.convertToMap());
-
-        // get parent commit
-        Integer parentHashInt = -1;
-        if (!head.isEmpty()) {
-            parentHashInt = head.getHead();
+        Map<String, String> indexFileInMap = index.convertToMap();
+        if (indexFileInMap.containsKey(pathPWD.toString())) {
+            index.replaceHash(indexFileInMap.get(pathPWD.toString()), hashOfTreeFileForRoot);
+        } else {
+            index.addNewFile(pathPWD.toString(), hashOfTreeFileForRoot);
         }
 
-        Integer curRevisionNumber = gitGraph.getNextRevisionNumber();
-        CommitInfo curCommit = new CommitInfo(curRevisionNumber, hashOfTreeFileForRoot, parentHashInt, commitMessage);
 
+        /* get parent commit */
+        String parentHashInString = "-1";
+        if (!head.isEmpty()) {
+            parentHashInString = head.getHead();
+        }
+
+        int curRevisionNumber = gitGraph.getNextRevisionNumber();
+        CommitInfo curCommit = new CommitInfo(curRevisionNumber, hashOfTreeFileForRoot, parentHashInString, commitMessage);
         /* create new commitFile */
-        hash = objects.createNewCommitFile(curCommit);
+        String hash = objects.createNewCommitFile(curCommit);
         gitGraph.addNewCommit(curRevisionNumber, index.convertToMap(), curCommit);
+
 
         /* change commit in head.txt */
         head.setHead(hash);
@@ -122,15 +169,14 @@ class Git {
      * It prints info of all commits.
      * @return List of CommitInfo. Each of them can be printed by printCommitInfo()
      */
-    public List<CommitInfo> log() {
+    List<CommitInfo> log() {
+
 
         List<CommitInfo> result = new ArrayList<>();
 
-
-        for (Integer curRevisionNumber = gitGraph.getSize(); curRevisionNumber > 0; curRevisionNumber--) {
+        for (int curRevisionNumber = gitGraph.getSize(); curRevisionNumber > 0; curRevisionNumber--) {
             result.add(gitGraph.findCommit(curRevisionNumber).get().getCommitInfo());
         }
-
         return result;
     }
 
@@ -140,11 +186,11 @@ class Git {
      * @param fromRevision - the number of revision from which it be printed
      * @return a list of structures, CommitInfo
      */
-    public List<CommitInfo> log(final Integer fromRevision) {
+    List<CommitInfo> log(final Integer fromRevision) {
         List<CommitInfo> result = new ArrayList<>();
 
 
-        for (Integer curRevisionNumber = fromRevision; curRevisionNumber > 0; curRevisionNumber--) {
+        for (int curRevisionNumber = fromRevision; curRevisionNumber > 0; curRevisionNumber--) {
             result.add(gitGraph.findCommit(curRevisionNumber).get().getCommitInfo());
         }
 
@@ -155,22 +201,22 @@ class Git {
      * Checkout.
      * @param revNumber - which commit should be downloaded.
      */
-    public void checkout(Integer revNumber) {
+    void checkout(Integer revNumber) throws IOException {
         if (revNumber > gitGraph.getSize()) {
             System.out.println("git checkout: Incorrect revision number");
         }
 
+        gitGraph.saveHeadOfBranch();
+
         /* find node which contains info about commit */
         GitGraph.Node node = gitGraph.findCommit(revNumber).get();
-
         /* set node as current in git graph */
         gitGraph.setCur(node);
-
         /* update index file */
         index.IndexFromMap(node.getIndexInMap());
 
         /* update all files */
-        Integer treeHash = node.getCommitInfo().getTreeHash();
+        String treeHash = node.getCommitInfo().getTreeHash();
         try {
             objects.invertTreeHashFile(treeHash, pwd);
         } catch (IOException e) {
@@ -178,11 +224,11 @@ class Git {
         }
     }
 
-    public void checkout(File fileToCheckout) {
-        Map<String, Integer> indexInMap = index.convertToMap();
+    void checkout(File fileToCheckout) {
+        Map<String, String> indexInMap = index.convertToMap();
 
         if (indexInMap.containsKey(fileToCheckout.toString())) {
-            Integer fileHash = indexInMap.get(fileToCheckout.toString());
+            String fileHash = indexInMap.get(fileToCheckout.toString());
             try {
                 objects.invertBlobHashFile(fileToCheckout, fileHash);
             } catch (IOException e) {
@@ -191,8 +237,8 @@ class Git {
         }
     }
 
-    public void rm(File fileToDelete) {
-        Map<String, Integer> indexInMap = index.convertToMap();
+    void rm(File fileToDelete) {
+        Map<String, String> indexInMap = index.convertToMap();
 
         if (indexInMap.containsKey(fileToDelete.toString())) {
             indexInMap.remove(fileToDelete.toString());
@@ -200,8 +246,8 @@ class Git {
         }
     }
 
-    public void status() {
-        Map<String, Integer> indexInMap = index.convertToMap();
+    void status() throws IOException {
+        Map<String, String> indexInMap = index.convertToMap();
 
         File rootDir = new File(pwd);
 
@@ -220,7 +266,7 @@ class Git {
                 if (!indexInMap.containsKey(file.toString())) {
                     System.out.println("? " + file);
                 } else {
-                    if (!objects.createNewBlobFile(file.toPath()).equals(indexInMap.get(file.toString()))) {
+                    if (objects.createNewBlobFile(file.toPath(), index) != indexInMap.get(file.toString())) {
                         System.out.println("M " + file);
                     }
                 }
@@ -229,8 +275,12 @@ class Git {
     }
 
     // this is for testing
-    public Integer getNumberOfObjectsFiles() {
+    Integer getNumberOfObjectsFiles() {
         return objects.getNumberOfObjectsFiles();
+    }
+
+    public HashSet<String> getListOfObjectsFiles() {
+        return objects.getListOfFiles();
     }
 
 }

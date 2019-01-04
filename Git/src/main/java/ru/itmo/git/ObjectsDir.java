@@ -1,11 +1,15 @@
 package ru.itmo.git;
 
+import com.google.common.hash.*;
+import com.google.common.io.Files;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FalseFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.List;
@@ -13,9 +17,20 @@ import java.util.Map;
 import java.util.Scanner;
 
 class ObjectsDir {
+    /* objects' file */
     private File objectDir;
+
+    /* objects' structure */
     private final HashSet<String> listOfFiles;
 
+    /* removing magic constants */
+    private final String ENCODING = "UTF-8";
+    private final int BLOB_LENGTH = "BLOB\n".length();
+
+    /**
+     * Constructor
+     * @param pathToGit - where .git/objects dir will be created
+     */
     ObjectsDir(Path pathToGit) {
         String objectsDirName = pathToGit.toString() + File.separator + "objects";
         objectDir = new File(objectsDirName);
@@ -29,118 +44,161 @@ class ObjectsDir {
         listOfFiles = new HashSet<>();
     }
 
-    private boolean isInObjectsDir(String fileName) {
-        return listOfFiles.contains(fileName);
+    ObjectsDir(File oldObjectsDir) {
+        objectDir = oldObjectsDir;
+
+        /* add all files in hashSet */
+        listOfFiles = new HashSet<>();
+        if (objectDir.isDirectory()) {
+
+            /* list all files in objects dir */
+            List<File> files = (List<File>) FileUtils.listFiles(objectDir,
+                    TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+
+            for (File curFile : files) {
+                listOfFiles.add(curFile.getName());
+            }
+        }
     }
 
-    private void addNewFile(String fileName, String fileContent) {
+    private void addNewFile(String fileName, String fileContent) throws IOException {
         String fullFileName = objectDir.toString() + File.separator + fileName + ".txt";
 
-        try {
-            File newFile = new File(fullFileName);
-            FileUtils.writeStringToFile(newFile, fileContent, "UTF-8");
-        } catch (IOException e) {
-            System.err.println("Object. addNewFile. Failed to create new file " + fileName);
-            e.printStackTrace();
-        }
+        File newFile = new File(fullFileName);
+        FileUtils.writeStringToFile(newFile, fileContent, ENCODING);
 
         listOfFiles.add(fileName);
     }
 
-    public String getFullPathByName(String hashInString) {
-        if (listOfFiles.contains(hashInString)) {
-            return objectDir.toString() + File.separator + hashInString + ".txt";
-        }
-
-        return "";
-    }
-
-    public Integer createNewBlobFile(Path pathToFile) {
+    String createNewBlobFile(Path pathToFile, Index index) throws IOException {
+        Map<String, String> indexInMap = index.convertToMap();
         File file = pathToFile.toFile();
 
-        String blobFileContent= "BLOB\n";
-        // read file content from file
-        try {
-            blobFileContent += FileUtils.readFileToString(file, "UTF-8");
+        HashCode fileHash = Files.hash(file, Hashing.murmur3_32());
 
-        } catch (IOException e) {
-            System.err.println("ObjectsDir. createNewBlobFile. Failed to read " + pathToFile);
-            e.printStackTrace();
-        }
+        /* hash BLOB + file content */
+        HashCode hashCode = Hashing.murmur3_32()
+                .newHasher()
+                .putString("BLOB\n",  StandardCharsets.UTF_8)
+                .putString(fileHash.toString(), StandardCharsets.UTF_8)
+                .hash();
 
-        Integer hash = blobFileContent.hashCode();
-        String hashInString = Integer.toString(hash);
+        String hashInString = hashCode.toString();
 
-        // create new blob file in object if there is no such file
+        /* create new blob file in object if there is no such file */
         if (!isInObjectsDir(hashInString)) {
-            addNewFile(hashInString, blobFileContent);
+            String fullBlobFileName = objectDir.toString() + File.separator + hashInString + ".txt";
+            File newBlobFile = new File(fullBlobFileName);
+
+            FileUtils.copyFile(file, newBlobFile);
+
+            listOfFiles.add(hashInString);
         }
 
-        return hash;
+        String fileNameInString = pathToFile.toString();
+        if (indexInMap.containsKey(fileNameInString) && indexInMap.get(fileNameInString).equals("")) {
+            index.replaceEmptyHash(fileNameInString, hashInString);
+        } else if (indexInMap.containsKey(fileNameInString)) {
+            index.replaceHash(indexInMap.get(fileNameInString), hashInString);
+        }
+
+        return hashInString;
     }
 
-    public Integer createNewTreeFile(Path pathToDir, Map<String, Integer> indexInMap) {
+    String createNewTreeFile(Path pathToDir, Index index) throws IOException {
+        Map<String, String> indexInMap = index.convertToMap();
+
         File dir = pathToDir.toFile();
-        StringBuilder treeFileContent = new StringBuilder("TREE\n");
+        StringBuilder treeFileContent = new StringBuilder();
 
         if (dir.isDirectory()) {
-            // list all files in dir
-            List<File> files = (List<File>) FileUtils.listFiles(dir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+            /* list all files in dir */
+            File[] fileList = pathToDir.toFile().listFiles();
+            if (fileList != null && fileList.length > 0) {
+                /* iterate of all files in this dir
+                   if cur file is file, just add "blob file_name hash(file_content)"
+                   if cur file is dir,  just add "tree dir_name  hash(tree_file_content)" */
+                for (File curFile : fileList) {
+                    /* skip all git's files */
+                    String fileName = curFile.getName();
+                    if (fileName.equals(".mygit") ||
+                            fileName.equals("objects") ||
+                            curFile.getParentFile().equals(objectDir) ||
+                            fileName.equals("index.txt") ||
+                            fileName.equals("HEAD.txt")) {
+                        continue;
+                    }
 
-            // iterate of all files in this dir
-            // if cur file is file, just add "blob file_name hash(file_content)"
-            // if cur file is dir,  just add "tree dir_name  hash(tree_file_content)"
-            for (File curFile : files) {
-                // skip all git's files
-                if (curFile.getName().equals(".git") ||
-                        curFile.getName().equals("objects") ||
-                        curFile.getParent().equals(objectDir.toString()) ||
-                        curFile.getName().equals("index.txt") ||
-                        curFile.getName().equals("HEAD.txt")) {
-                    continue;
-                }
+                    if (curFile.isFile() && indexInMap.containsKey(curFile.toString())) {
 
-                if (curFile.isDirectory() && indexInMap.containsKey(curFile.toString())) {
-                    String hashOfTreeFileForThisSubDir = Integer.toString(createNewTreeFile(curFile.toPath(), indexInMap));
-                    String dirInfo = "tree" + " " + curFile.toString() + " " + hashOfTreeFileForThisSubDir + "\n";
-                    treeFileContent.append(dirInfo);
-                } else if (curFile.isFile() && indexInMap.containsKey(curFile.toString())) {
-                    String hashOfBlobFile = Integer.toString(createNewBlobFile(curFile.toPath()));
-                    String fileInfo = "blob" + " " + curFile.toString() + " " + hashOfBlobFile + "\n";
-                    treeFileContent.append(fileInfo);
+                        String hashOfBlobFile = createNewBlobFile(curFile.toPath(), index);
+                        String fileInfo = "blob" + " " + curFile.toString() + " " + hashOfBlobFile + "\n";
+                        treeFileContent.append(fileInfo);
+
+                    } else if (curFile.isDirectory() && indexInMap.containsKey(curFile.toString())) {
+                        String hashOfTreeFileForThisSubDir = createNewTreeFile(curFile.toPath(), index);
+                        String dirInfo = "tree" + " " + curFile.toString() + " " + hashOfTreeFileForThisSubDir + "\n";
+                        treeFileContent.append(dirInfo);
+                    }
                 }
             }
         }
 
-        Integer hash = treeFileContent.toString().hashCode();
-        String hashInString = Integer.toString(hash);
+        String treeFileContentInString = treeFileContent.toString();
 
-        // if in .git/objects there is file with name like hash, do nothing
-        // else - create new file and write in it tree file content
+        /* hash TREE file content */
+        HashCode hashCode = Hashing.murmur3_32()
+                .newHasher()
+                .putString("TREE\n",  StandardCharsets.UTF_8)
+                .putString(treeFileContentInString, StandardCharsets.UTF_8)
+                .hash();
+
+        String hashInString = hashCode.toString();
+
+        /* if in .git/objects there is file with name like hash, do nothing
+           else - create new file and write in it tree file content */
         if (!isInObjectsDir(hashInString)) {
-            addNewFile(hashInString, treeFileContent.toString());
+            String fullTreeFileName = objectDir.toString() + File.separator + hashInString + ".txt";
+
+            File newTreeFile = new File(fullTreeFileName);
+            FileUtils.writeStringToFile(newTreeFile, "TREE\n" + treeFileContentInString, ENCODING);
+
+            listOfFiles.add(hashInString);
         }
 
-        return hash;
-    }
-
-    public Integer createNewCommitFile(CommitInfo curCommitInfo) {
-        String commitFileContent = "COMMIT";
-
-        commitFileContent += curCommitInfo.getCommitInfo();
-
-        Integer hash = commitFileContent.hashCode();
-        String hashInString = Integer.toString(hash);
-
-        if (!isInObjectsDir(hashInString)) {
-            addNewFile(hashInString, commitFileContent);
+        String dirNameInString = pathToDir.toString();
+        if (indexInMap.containsKey(dirNameInString) && indexInMap.get(dirNameInString).equals("")) {
+            index.replaceEmptyHash(dirNameInString, hashInString);
+        } else if (indexInMap.containsKey(dirNameInString)) {
+            index.replaceHash(indexInMap.get(dirNameInString), hashInString);
         }
 
-        return hash;
+        return hashInString;
     }
 
-    public void invertTreeHashFile(Integer treeHash, String pwd) throws IOException {
-        String treeHashFileNameInString = Integer.toString(treeHash);
+    String createNewCommitFile(CommitInfo curCommitInfo) throws IOException {
+        curCommitInfo.printCommitInfo();
+        String commitFileContentInString = curCommitInfo.getCommitInfo();
+
+        /* hash COMMIT file content */
+        HashCode hashCode = Hashing.murmur3_32()
+                .newHasher()
+                .putString("COMMIT\n",  StandardCharsets.UTF_8)
+                .putString(commitFileContentInString, StandardCharsets.UTF_8)
+                .hash();
+
+        String hashInString = hashCode.toString();
+
+        if (!isInObjectsDir(hashInString)) {
+
+            addNewFile(hashInString, "COMMIT\n" + commitFileContentInString);
+        }
+
+        return hashInString;
+    }
+
+    void invertTreeHashFile(String treeHash, String pwd) throws IOException {
+        String treeHashFileNameInString = treeHash;
 
         if(isInObjectsDir(treeHashFileNameInString)) {
             File treeFile = new File(getFullPathByName(treeHashFileNameInString));
@@ -159,23 +217,16 @@ class ObjectsDir {
                     String hash = scanner.next();
 
                     /* file is removed from restoredDirContains if this file was handled */
-                    if (restoredDirContains.contains(new File(path))) {
-                        restoredDirContains.remove(new File(path));
-                    }
+                    restoredDirContains.remove(new File(path));
 
                     if (label.equals("tree")) {
                         /* call this function recursively for this subDir */
-                        invertTreeHashFile(Integer.parseInt(hash), path);
+                        invertTreeHashFile(hash, path);
                     } else {
 
                         /* get this blob file content */
                         if (isInObjectsDir(hash)) {
-                            String blobFileContent = FileUtils.readFileToString(new File(getFullPathByName(hash)),
-                                    "UTF-8");
-                            blobFileContent = blobFileContent.substring(5, blobFileContent.length());
-
-                        /* overwrite this file */
-                            FileUtils.writeStringToFile(new File(path), blobFileContent, "UTF-8", false);
+                            invertBlobHashFile(new File(path), hash);
                         }
                     }
                 }
@@ -189,21 +240,46 @@ class ObjectsDir {
         }
     }
 
-    public void invertBlobHashFile(File fileToCheckout, Integer hashBlobFile) throws IOException {
-        String hashBlobFileInString = Integer.toString(hashBlobFile);
+    void invertBlobHashFile(File fileToCheckout, String hashBlobFile) throws IOException {
 
-        if (isInObjectsDir(hashBlobFileInString)) {
-            String fullPathToBlobFile = getFullPathByName(hashBlobFileInString);
-            String blobFileContent = FileUtils.readFileToString(new File(fullPathToBlobFile), "UTF-8");
+        if (isInObjectsDir(hashBlobFile)) {
 
-            blobFileContent = blobFileContent.substring(5, blobFileContent.length());
-
-            FileUtils.writeStringToFile(fileToCheckout, blobFileContent, "UTF-8", false);
+            File blobFile = new File(getFullPathByName(hashBlobFile));
+            FileUtils.copyFile(blobFile, fileToCheckout, false);
         }
     }
 
+    private boolean isInObjectsDir(String fileName) {
+        return listOfFiles.contains(fileName);
+    }
+
+    private String getFullPathByName(String hashInString) {
+        if (listOfFiles.contains(hashInString)) {
+            return objectDir.toString() + File.separator + hashInString + ".txt";
+        }
+
+        return null;
+    }
+
+    CommitInfo getCommitInfo(String fileName) {
+        File[] files = objectDir.listFiles();
+        if (files != null && files.length > 0) {
+            for (File file : files) {
+                if (file.getName().equals(fileName + ".txt")) {
+                    return new CommitInfo(file);
+                }
+            }
+        }
+
+        return null;
+    }
+
     /* this is for testing */
-    public Integer getNumberOfObjectsFiles() {
+    int getNumberOfObjectsFiles() {
         return listOfFiles.size();
+    }
+
+    HashSet<String> getListOfFiles() {
+        return listOfFiles;
     }
 }

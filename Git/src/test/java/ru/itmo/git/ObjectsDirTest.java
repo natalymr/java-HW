@@ -20,7 +20,7 @@ public class ObjectsDirTest {
     public final TemporaryFolder folder = new TemporaryFolder();
 
     @Test
-    public void testBlobFile() {
+    public void testBlobFile() throws IOException {
 
         Git git = new Git(folder.getRoot());
 
@@ -29,37 +29,32 @@ public class ObjectsDirTest {
         String fileName = "file.txt";
         String fileContent = "zzz";
 
-        try {
-            File file = folder.newFile(fileName);
-            FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
+        File file = folder.newFile(fileName);
+        FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
 
-            git.add(file.toPath());
+        git.add(file.toPath());
 
-            File objectsDir = folder.getRoot().toPath().resolve(".git").resolve("objects").toFile();
-            List<File> objectsContains = (List<File>)FileUtils.listFiles(objectsDir,
-                    TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        File objectsDir = folder.getRoot().toPath().resolve(".mygit").resolve("objects").toFile();
+        List<File> objectsContains = (List<File>) FileUtils.listFiles(objectsDir,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 
-            for (File f : objectsContains) {
-                try (Scanner scanner = new Scanner(f)) {
-                    String label = scanner.nextLine();
-                    if (label.equals("BLOB")) {
-                        String fileContentActual = scanner.nextLine();
-                        String fileContentExpected = "zzz";
-                        assertThat(fileContentActual).isEqualTo(fileContentExpected);
-                    }
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+        for (File f : objectsContains) {
+            try (Scanner scanner = new Scanner(f)) {
+                String label = scanner.nextLine();
+                if (label.equals("BLOB")) {
+                    String fileContentActual = scanner.nextLine();
+                    String fileContentExpected = "zzz";
+                    assertThat(fileContentActual).isEqualTo(fileContentExpected);
                 }
-            }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.getCause();
+            }
         }
     }
 
     @Test
-    public void testTreeFile() {
+    public void testTreeFile() throws IOException {
         Git git = new Git(folder.getRoot());
 
         git.init();
@@ -67,46 +62,42 @@ public class ObjectsDirTest {
         String fileName = "file.txt";
         String fileContent = "zzz";
 
-        try {
-            File file = folder.newFile(fileName);
-            FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
+        File file = folder.newFile(fileName);
+        FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
 
-            git.add(file.toPath());
+        git.add(file.toPath());
 
-            git.commit("First commit!");
+        git.commit("First commit!");
 
-            File objectsDir = folder.getRoot().toPath().resolve(".git").resolve("objects").toFile();
-            List<File> objectsContains = (List<File>)FileUtils.listFiles(objectsDir,
-                    TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        File objectsDir = folder.getRoot().toPath().resolve(".mygit").resolve("objects").toFile();
+        List<File> objectsContains = (List<File>) FileUtils.listFiles(objectsDir,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 
-            for (File f : objectsContains) {
-                try (Scanner scanner = new Scanner(f)) {
-                    String label = scanner.nextLine();
-                    if (label.equals("TREE")) {
-                        String blobLabel = scanner.next();
-                        String blobFileName = scanner.next();
-                        String blobFileHash = scanner.next();
+        for (File f : objectsContains) {
+            try (Scanner scanner = new Scanner(f)) {
+                String label = scanner.nextLine();
+                if (label.equals("TREE")) {
+                    String blobLabel = scanner.next();
+                    String blobFileName = scanner.next();
+                    String blobFileHash = scanner.next();
 
-                        assertThat(blobLabel).isEqualTo("blob");
-                        assertThat(blobFileName).isEqualTo(file.toString());
+                    assertThat(blobLabel).isEqualTo("blob");
+                    assertThat(blobFileName).isEqualTo(file.toString());
 
-                        blobFileHash += ".txt";
-                        File blobFileHashAbsolutePath = folder.getRoot().toPath()
-                                .resolve(".git").resolve("objects").resolve(blobFileHash).toFile();
-                        assertThat(objectsContains).contains(blobFileHashAbsolutePath);
-                    }
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    blobFileHash += ".txt";
+                    File blobFileHashAbsolutePath = folder.getRoot().toPath()
+                            .resolve(".mygit").resolve("objects").resolve(blobFileHash).toFile();
+                    assertThat(objectsContains).contains(blobFileHashAbsolutePath);
                 }
+
+            } catch (FileNotFoundException e) {
+                e.getCause();
             }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     @Test
-    public void testCommitFile() {
+    public void testCommitFile() throws IOException {
 
         Git git = new Git(folder.getRoot());
 
@@ -115,50 +106,58 @@ public class ObjectsDirTest {
         String fileName = "file.txt";
         String fileContent = "zzz";
 
-        try {
-            File file = folder.newFile(fileName);
-            FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
+        File file = folder.newFile(fileName);
+        FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
 
-            git.add(file.toPath());
+        git.add(file.toPath());
 
-            git.commit("First commit!");
+        git.commit("First commit!");
 
-            File objectsDir = folder.getRoot().toPath().resolve(".git").resolve("objects").toFile();
-            List<File> objectsContains = (List<File>)FileUtils.listFiles(objectsDir,
-                    TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        File objectsDir = folder.getRoot().toPath().resolve(".mygit").resolve("objects").toFile();
+        List<File> objectsContains = (List<File>) FileUtils.listFiles(objectsDir,
+                TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 
-            for (File f : objectsContains) {
-                try (Scanner scanner = new Scanner(f)) {
-                    String label = scanner.nextLine();
-                    if (label.equals("COMMIT")) {
-                        String cRevNumberActual = scanner.nextLine();
-                        String cRevNumberExpected = "COMMIT# 1";
-                        assertThat(cRevNumberActual).isEqualTo(cRevNumberExpected);
+        for (File f : objectsContains) {
+            try (Scanner scanner = new Scanner(f)) {
+                String label = scanner.nextLine();
+                if (label.equals("COMMIT")) {
+                    /* commit */
+                    assertThat(scanner.next()).isEqualTo("COMMIT#");
 
-                        scanner.nextLine(); //tree
-                        String cParentActual = scanner.nextLine(); // parent
-                        String cParentExpected = "parent -1";
-                        assertThat(cParentActual).isEqualTo(cParentExpected);
+                    String cRevNumberActual = scanner.next();
+                    String cRevNumberExpected = "1";
+                    assertThat(cRevNumberActual).isEqualTo(cRevNumberExpected);
 
-                        scanner.nextLine(); // date
-                        String cMsgActual = scanner.nextLine();
-                        String cMsgExpected = "message First commit!";
-                        assertThat(cMsgActual).isEqualTo(cMsgExpected);
-                    }
+                    /* tree */
+                    System.out.println(scanner.next() + " " + scanner.next());
 
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
+                    /* parent */
+                    assertThat(scanner.next()).isEqualTo("parent");
+
+                    String cParentActual = scanner.next(); // parent
+                    String cParentExpected = "-1";
+                    assertThat(cParentActual).isEqualTo(cParentExpected);
+
+                    /* date */
+                    System.out.println(scanner.nextLine() + scanner.nextLine());
+
+                    /* message */
+                    assertThat(scanner.next()).isEqualTo("message");
+
+                    String cMsgActual = scanner.next() + " " + scanner.next();
+                    String cMsgExpected = "First commit!";
+                    assertThat(cMsgActual).isEqualTo(cMsgExpected);
                 }
-            }
 
-        } catch (IOException e) {
-            e.printStackTrace();
+            } catch (FileNotFoundException e) {
+                e.getCause();
+            }
         }
     }
 
 
     @Test
-    public void testNumberOfFilesForAddAndCommitAndChange() {
+    public void testNumberOfFilesForAddAndCommitAndChange() throws IOException {
         Git git = new Git(folder.getRoot());
 
         git.init();
@@ -167,34 +166,54 @@ public class ObjectsDirTest {
         String fileContentFirst = "zzz";
         String fileContentSecond = "aaa";
 
-        try {
-            File file = folder.newFile(fileName);
-            FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
+        File file = folder.newFile(fileName);
+        FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
 
-            git.add(file.toPath());
+        git.add(file.toPath());
 
-            git.commit("First commit!");
+        git.commit("First commit!");
 
-            // check that in objects dir there are only:
-            // 1 blob file
-            // 1 tree file
-            // 1 commit file
-            assertThat(git.getNumberOfObjectsFiles()).isEqualTo(3);
+        // check that in objects dir there are only:
+        // 1 blob file
+        // 1 tree file
+        // 1 commit file
+        assertThat(git.getNumberOfObjectsFiles()).isEqualTo(3);
 
-            FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", true);
+        FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", true);
 
-            git.add(file.toPath());
+        git.add(file.toPath());
 
-            git.commit("Second commit!");
+        git.commit("Second commit!");
 
-            // NOW
-            // check that in objects dir there are:
-            // 2 blob file
-            // 2 tree file
-            // 2 commit file
-            assertThat(git.getNumberOfObjectsFiles()).isEqualTo(6);
-        } catch (IOException e) {
-            System.err.println("Test. testNumberOfFilesForAddAndCommitAndChange");
-        }
+        // NOW
+        // check that in objects dir there are:
+        // 2 blob file
+        // 2 tree file
+        // 2 commit file
+        assertThat(git.getNumberOfObjectsFiles()).isEqualTo(6);
+    }
+
+    @Test
+    public void testNumberOfFilesInCaseOfNestedDir() throws IOException {
+        Git git = new Git(folder.getRoot());
+
+        git.init();
+
+        String dirName = "NestedDir";
+        String fileName = dirName + File.separator + "file.txt";
+        String fileContent = "zzz";
+
+        File nestedDir = folder.newFolder(dirName);
+
+        File file = folder.newFile(fileName);
+        FileUtils.writeStringToFile(file, fileContent, "UTF-8", true);
+        git.add(nestedDir.toPath());
+        git.commit("First commit!");
+
+        // check that in objects dir there are only:
+        // 1 blob file
+        // 2 tree file
+        // 1 commit file
+        assertThat(git.getNumberOfObjectsFiles()).isEqualTo(4);
     }
 }
