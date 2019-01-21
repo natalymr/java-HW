@@ -259,17 +259,16 @@ public class GitTest {
         String fileContentSecond = "aaa";
 
         File file = folder.newFile(fileName);
-        FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", true);
-        git.add(file.toPath());
 
+        FileUtils.writeStringToFile(file, fileContentFirst, "UTF-8", false);
+        git.add(file.toPath());
         git.commit("First commit!");
 
 
-        FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", true);
-
+        FileUtils.writeStringToFile(file, fileContentSecond, "UTF-8", false);
         git.add(file.toPath());
-
         git.commit("Second commit!");
+
         git.checkout(1);
 
         try (Scanner scanner = new Scanner(file)) {

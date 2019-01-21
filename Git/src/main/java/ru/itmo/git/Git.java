@@ -25,15 +25,16 @@ class Git {
 
     /**
      * Constructor
+     *
      * @param rootDir - where .git dir will be created
      */
-     Git(File rootDir) {
-        pwd      = rootDir.getAbsolutePath();
+    Git(File rootDir) {
+        pwd = rootDir.getAbsolutePath();
 
-        gitPath  = null;
-        index    = null;
-        head     = null;
-        objects  = null;
+        gitPath = null;
+        index = null;
+        head = null;
+        objects = null;
 
         gitGraph = null;//new GitGraph();
     }
@@ -75,24 +76,24 @@ class Git {
 
         String gitDirName = pwd + File.separator + ".mygit";
 
-        File gitDir     = new File(gitDirName);
+        File gitDir = new File(gitDirName);
         File objectsDir = new File(gitDirName + File.separator + "objects");
-        File indexFile  = new File(gitDirName + File.separator + "index.txt");
-        File headFile   = new File(gitDirName + File.separator + "HEAD.txt");
+        File indexFile = new File(gitDirName + File.separator + "index.txt");
+        File headFile = new File(gitDirName + File.separator + "HEAD.txt");
 
 
         /* check that there are all git's files */
         if (!gitDir.exists() ||
-                !objectsDir.exists() ||
-                !indexFile.exists() ||
-                !headFile.exists()) {
+            !objectsDir.exists() ||
+            !indexFile.exists() ||
+            !headFile.exists()) {
 
             throw new FileNotFoundException("mygit: open");
         } else {
-            gitPath  = new File(gitDirName).toPath();
-            objects  = new ObjectsDir(objectsDir);
-            index    = new Index(indexFile);
-            head     = new Head(headFile);
+            gitPath = new File(gitDirName).toPath();
+            objects = new ObjectsDir(objectsDir);
+            index = new Index(indexFile);
+            head = new Head(headFile);
         }
 
         /* restore gitGraph */
@@ -102,10 +103,10 @@ class Git {
     /**
      * Add
      * Add file for
+     *
      * @param pathToFile the file or the dir that will be added
      */
     void add(Path pathToFile) throws IOException {
-
         /* create blobFile or treeFile for inputFile and get hash(fileContent) */
         String hash = "";
         index.addNewFileForChecking(pathToFile.toString());
@@ -131,6 +132,7 @@ class Git {
     /**
      * Commit
      * Commit files
+     *
      * @param commitMessage - a message of this commit
      */
     void commit(String commitMessage) throws IOException {
@@ -167,15 +169,18 @@ class Git {
     /**
      * This is default log.
      * It prints info of all commits.
+     *
      * @return List of CommitInfo. Each of them can be printed by printCommitInfo()
      */
     List<CommitInfo> log() {
-
-
         List<CommitInfo> result = new ArrayList<>();
 
         for (int curRevisionNumber = gitGraph.getSize(); curRevisionNumber > 0; curRevisionNumber--) {
-            result.add(gitGraph.findCommit(curRevisionNumber).get().getCommitInfo());
+            if (gitGraph.findCommit(curRevisionNumber).isPresent()) {
+                GitGraph.Node commitNode = gitGraph.findCommit(curRevisionNumber).get();
+                result.add(commitNode.getCommitInfo());
+            }
+
         }
         return result;
     }
@@ -183,6 +188,7 @@ class Git {
     /**
      * This is a variant of log function.
      * It prints info about commit fromRevision and less.
+     *
      * @param fromRevision - the number of revision from which it be printed
      * @return a list of structures, CommitInfo
      */
@@ -199,6 +205,7 @@ class Git {
 
     /**
      * Checkout.
+     *
      * @param revNumber - which commit should be downloaded.
      */
     void checkout(Integer revNumber) throws IOException {
@@ -217,23 +224,18 @@ class Git {
 
         /* update all files */
         String treeHash = node.getCommitInfo().getTreeHash();
-        try {
-            objects.invertTreeHashFile(treeHash, pwd);
-        } catch (IOException e) {
-            System.out.println("Checkout failed.");
-        }
+        objects.invertTreeHashFile(treeHash, pwd);
+
+        /* set new head*/
+        head.setHead(objects.getCommitFileNameByCommitInfo(node.getCommitInfo()));
     }
 
-    void checkout(File fileToCheckout) {
+    void checkout(File fileToCheckout) throws IOException {
         Map<String, String> indexInMap = index.convertToMap();
 
         if (indexInMap.containsKey(fileToCheckout.toString())) {
             String fileHash = indexInMap.get(fileToCheckout.toString());
-            try {
-                objects.invertBlobHashFile(fileToCheckout, fileHash);
-            } catch (IOException e) {
-                System.out.println("checkout failed.");
-            }
+            objects.invertBlobHashFile(fileToCheckout, fileHash);
         }
     }
 
@@ -255,10 +257,12 @@ class Git {
         for (File file : files) {
 
             if (file.getName().equals(".git") ||
-                    file.getName().equals("objects") ||
-                    file.getParent().equals(gitPath + File.separator + "objects") ||
-                    file.getName().equals("index.txt") ||
-                    file.getName().equals("HEAD.txt")) {
+                file.getName().equals("objects") ||
+                file.getParent().equals(gitPath + File.separator + "objects") ||
+                file.getName().equals("gitGraph") ||
+                file.getParentFile().getName().equals("gitGraph") ||
+                file.getName().equals("index.txt") ||
+                file.getName().equals("HEAD.txt")) {
                 continue;
             }
 
@@ -266,7 +270,7 @@ class Git {
                 if (!indexInMap.containsKey(file.toString())) {
                     System.out.println("? " + file);
                 } else {
-                    if (objects.createNewBlobFile(file.toPath(), index) != indexInMap.get(file.toString())) {
+                    if (!objects.computeHashOfBlobFile(file.toPath()).equals(indexInMap.get(file.toString()))) {
                         System.out.println("M " + file);
                     }
                 }

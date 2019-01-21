@@ -42,19 +42,15 @@ class GitGraph {
             return;
         }
 
-        Node head = restoreBranch(headCommit);
-        setCur(head);
-
         File[] files = gitGraphDir.listFiles();
-        if (files != null && files.length > 1) {
+        if (files != null && files.length >= 1) {
             for (File file : files) {
-                if (file.getName().equals(headCommit)) {
-                    continue;
-                }
-
                 restoreBranch(file.getName());
             }
         }
+
+        Node head = restoreBranch(headCommit);
+        setCur(head);
     }
 
     private Node restoreBranch(String headHash) {
@@ -67,20 +63,23 @@ class GitGraph {
             CommitInfo child = listOfCommits.get(listOfCommits.size() - 1);
             String parentHash = child.getParentHash();
             if (parentHash.equals("-1")) {
-
                 break;
             } else {
                 listOfCommits.add(object.getCommitInfo(parentHash));
             }
         }
 
-        // работаем с листом коммитов, у которого в начале лежит наиболее ранний коммит
+        // работаем с листом коммитов, у которого в начале лежит наиболее поздний коммит
         Map<String, String> indexInMap = index.convertToMap();
 
         // сначала - корень графа
         int listSize = listOfCommits.size();
         CommitInfo parentCI = listOfCommits.get(listSize - 1);
-        Node parent = new Node(null, parentCI.getRevisionNumber(), indexInMap, parentCI);
+
+        Node parent = (root == null)
+            ? new Node(null, parentCI.getRevisionNumber(), indexInMap, parentCI)
+            : root;
+
         size.add(parent.getRevisionNumber());
         setRoot(parent);
 
@@ -88,18 +87,18 @@ class GitGraph {
             CommitInfo nextCI = listOfCommits.get(i);
 
             if (!size.contains(nextCI.getRevisionNumber())) {
-                Node next = new Node(parent, nextCI.getRevisionNumber(), indexInMap, nextCI);
+                Node child = new Node(parent, nextCI.getRevisionNumber(), indexInMap, nextCI);
                 size.add(nextCI.getRevisionNumber());
-                parent.addChildren(next);
+                parent.addChildren(child);
 
-                parent = next;
+                parent = child;
             }
         }
 
         return parent;
     }
 
-    private Optional<Node> getRoot() {
+    Optional<Node> getRoot() {
         return Optional.ofNullable(root);
     }
 
@@ -107,7 +106,7 @@ class GitGraph {
         root = newRoot;
     }
 
-    private Optional<Node> getCur() {
+    Optional<Node> getCur() {
         return Optional.ofNullable(cur);
     }
 
@@ -138,7 +137,6 @@ class GitGraph {
             setCur(newNode);
         } else {
             Node newNode = new Node(null, revNumber, index, commit);
-            commit.printCommitInfo();
             setRoot(newNode);
             setCur(newNode);
         }
@@ -149,6 +147,7 @@ class GitGraph {
     Optional<Node> findCommit(int revNumber) {
         if (!getRoot().isPresent())
             return Optional.empty();
+
         // use BFS
         Queue<Node> queue = new ArrayDeque<>();
         HashSet<Integer> visited = new HashSet<>();
@@ -157,7 +156,6 @@ class GitGraph {
         queue.add(getRoot().get());
 
         while (!queue.isEmpty()) {
-
             Node curNode = queue.poll();
 
             if (curNode.getRevisionNumber() == revNumber) {
@@ -212,7 +210,7 @@ class GitGraph {
             return indexInMap;
         }
 
-        private ArrayList<Node> getChildren() {
+        public ArrayList<Node> getChildren() {
             return children;
         }
 

@@ -11,10 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
 
 class ObjectsDir {
     /* objects' file */
@@ -56,7 +53,9 @@ class ObjectsDir {
                     TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
 
             for (File curFile : files) {
-                listOfFiles.add(curFile.getName());
+                int curFileNameSize = curFile.getName().length();
+                String curFileName = curFile.getName().substring(0, curFileNameSize - ".txt".length());
+                listOfFiles.add(curFileName);
             }
         }
     }
@@ -74,16 +73,7 @@ class ObjectsDir {
         Map<String, String> indexInMap = index.convertToMap();
         File file = pathToFile.toFile();
 
-        HashCode fileHash = Files.hash(file, Hashing.murmur3_32());
-
-        /* hash BLOB + file content */
-        HashCode hashCode = Hashing.murmur3_32()
-                .newHasher()
-                .putString("BLOB\n",  StandardCharsets.UTF_8)
-                .putString(fileHash.toString(), StandardCharsets.UTF_8)
-                .hash();
-
-        String hashInString = hashCode.toString();
+        String hashInString = computeHashOfBlobFile(pathToFile);
 
         /* create new blob file in object if there is no such file */
         if (!isInObjectsDir(hashInString)) {
@@ -105,6 +95,21 @@ class ObjectsDir {
         return hashInString;
     }
 
+    String computeHashOfBlobFile(Path pathToFile) throws IOException {
+        File file = pathToFile.toFile();
+
+        HashCode fileHash = Files.hash(file, Hashing.murmur3_32());
+
+        /* hash BLOB + file content */
+        HashCode hashCode = Hashing.murmur3_32()
+            .newHasher()
+            .putString("BLOB\n",  StandardCharsets.UTF_8)
+            .putString(fileHash.toString(), StandardCharsets.UTF_8)
+            .hash();
+
+        return hashCode.toString();
+    }
+
     String createNewTreeFile(Path pathToDir, Index index) throws IOException {
         Map<String, String> indexInMap = index.convertToMap();
 
@@ -123,6 +128,8 @@ class ObjectsDir {
                     String fileName = curFile.getName();
                     if (fileName.equals(".mygit") ||
                             fileName.equals("objects") ||
+                            fileName.equals("gitGraph") ||
+                            curFile.getParentFile().getName().equals("gitGraph") ||
                             curFile.getParentFile().equals(objectDir) ||
                             fileName.equals("index.txt") ||
                             fileName.equals("HEAD.txt")) {
@@ -177,7 +184,6 @@ class ObjectsDir {
     }
 
     String createNewCommitFile(CommitInfo curCommitInfo) throws IOException {
-        curCommitInfo.printCommitInfo();
         String commitFileContentInString = curCommitInfo.getCommitInfo();
 
         /* hash COMMIT file content */
@@ -190,11 +196,30 @@ class ObjectsDir {
         String hashInString = hashCode.toString();
 
         if (!isInObjectsDir(hashInString)) {
-
             addNewFile(hashInString, "COMMIT\n" + commitFileContentInString);
         }
 
         return hashInString;
+    }
+
+    String getCommitFileNameByCommitInfo(CommitInfo commitInfo) throws IOException {
+        File[] files = objectDir.listFiles();
+        if (files != null && files.length > 0) {
+            for (File file : files) {
+                try (Scanner scanner = new Scanner(file)) {
+                    if (scanner.nextLine().equals("COMMIT")) {
+                        String[] commitNumber = scanner.nextLine().split(" ");
+                        int revNumber = Integer.parseInt(commitNumber[commitNumber.length - 1]);
+                        if (revNumber == commitInfo.getRevisionNumber()) {
+                            String fileName = file.getName();
+                            return fileName.substring(0, fileName.length() - ".txt".length());
+                        }
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     void invertTreeHashFile(String treeHash, String pwd) throws IOException {
@@ -223,13 +248,14 @@ class ObjectsDir {
                         /* call this function recursively for this subDir */
                         invertTreeHashFile(hash, path);
                     } else {
-
                         /* get this blob file content */
                         if (isInObjectsDir(hash)) {
                             invertBlobHashFile(new File(path), hash);
                         }
                     }
                 }
+            } catch (NoSuchElementException ignored) {
+                System.out.println("break in " + treeFile.getName());
             }
 
             if (!restoredDirContains.isEmpty()) {

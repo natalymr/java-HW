@@ -18,13 +18,10 @@ public class Main {
         String command = args[0];
 
         if (command.equals("init")) {
-            System.out.println("INIT");
-
             try {
                 Git mygit = new Git(pwd);
                 mygit.init();
-                System.out.println("init success");
-            } catch (FileNotFoundException e) {
+            } catch (FileNotFoundException ignored) {
                 System.out.println("mygit: failed to init mygit");
             }
 
@@ -36,59 +33,52 @@ public class Main {
         try {
             mygit = new Git(pwd);
             mygit.open();
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException ignored) {
             checkPWD();
             return;
         }
 
         switch (command) {
             case "add":
-                System.out.println("ADD");
-                System.out.println(mygit);
+                if (argsAreMissed(args)) {
+                    break;
+                }
 
                 String fileName = args[1];
                 String fullFileName = pwd.toString() + File.separator + fileName;
-                System.out.println(fullFileName);
                 File fileToAdd = new File(fullFileName);
 
                 try {
                     mygit.add(fileToAdd.toPath());
-                    System.out.println("add success");
-                } catch (IOException e) {
-                    System.out.println(e.getMessage());
-                    System.out.println("mygit: cannot add file " + fileName);
+                } catch (IOException ignored) {
+                    System.out.println("mygit: can not add file " + fileName);
                 }
 
                 break;
 
             case "commit":
-                System.out.println("COMMIT");
-
                 String[] commitMessageInArray = Arrays.stream(args)
                         .filter(e -> !e.equals("mygit") && !e.equals("commit")).toArray(String[]::new);
                 String commitMessage = String.join(" ", commitMessageInArray);
 
-                mygit.commit(commitMessage);
-                System.out.println("commit success");
+                try {
+                    mygit.commit(commitMessage);
+                } catch (IOException ignored) {
+                    System.out.println("mygit: can not commit");
+                }
 
                 break;
 
             case "log":
-                System.out.println("LOG");
                 List<CommitInfo> log;
 
-                System.out.println("log args = " + args.length);
-
                 if (args.length == 1) {
-                    System.out.println("log.if");
                     log = mygit.log();
-                    System.out.println("log_size = " + log.size());
                 } else {
                     int revisionNumber = Integer.parseInt(args[1]);
                     log = mygit.log(revisionNumber);
                 }
 
-                System.out.println("log_size = " + log.size());
                 for (CommitInfo commitInfo : log) {
                     commitInfo.printCommitInfo();
                 }
@@ -96,35 +86,49 @@ public class Main {
                 break;
 
             case "checkout":
-                System.out.println("CHECKOUT");
+                if (argsAreMissed(args)) {
+                    break;
+                }
 
                 try {
-                    int revisionNumber = Integer.parseInt(args[1]);
-                    mygit.checkout(revisionNumber);
-                } catch (NumberFormatException e){
-                    String fileToCheckout = args[1];
-                    mygit.checkout(new File(fileToCheckout));
+                    try {
+                        int revisionNumber = Integer.parseInt(args[1]);
+                        mygit.checkout(revisionNumber);
+                    } catch (NumberFormatException ignored){
+                        String fileToCheckout = args[1];
+                        mygit.checkout(new File(fileToCheckout));
+                    }
+                } catch (IOException ignored) {
+                    System.out.println("mygit: can not checkout");
                 }
 
                 break;
 
             case "rm":
-                System.out.println("RM");
+                if (argsAreMissed(args)) {
+                    break;
+                }
 
                 String fileToRm = args[1];
-                mygit.rm(new File(fileToRm));
 
+                mygit.rm(new File(fileToRm));
                 break;
 
             case "status":
-                System.out.println("STATUS");
-
                 mygit.status();
-
                 break;
             default:
                 System.out.println("mygit: " + command + " not mygit command");
         }
+    }
+
+    private static boolean argsAreMissed(String[] args) {
+        if (args.length == 1) {
+            System.out.println("You forget your arguments");
+            return true;
+        }
+
+        return false;
     }
 
     private static void checkPWD() {
