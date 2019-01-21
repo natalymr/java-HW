@@ -254,9 +254,7 @@ class ObjectsDir {
                         }
                     }
                 }
-            } catch (NoSuchElementException ignored) {
-                System.out.println("break in " + treeFile.getName());
-            }
+            } catch (NoSuchElementException ignored) {}
 
             if (!restoredDirContains.isEmpty()) {
                 for (File f : restoredDirContains) {

@@ -115,7 +115,18 @@ public class Main {
                 break;
 
             case "status":
-                mygit.status();
+                try {
+                    mygit.status();
+                } catch (IOException ignored) {
+                    System.out.println("mygit: can not status");
+                }
+                break;
+            case "reset":
+                try {
+                    mygit.reset();
+                } catch (IOException ignored) {
+                    System.out.println("mygit: can not reset");
+                }
                 break;
             default:
                 System.out.println("mygit: " + command + " not mygit command");

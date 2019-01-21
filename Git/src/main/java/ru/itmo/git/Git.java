@@ -251,6 +251,8 @@ class Git {
     void status() throws IOException {
         Map<String, String> indexInMap = index.convertToMap();
 
+        System.out.println("head now " + head.getHead());
+
         File rootDir = new File(pwd);
 
         List<File> files = (List<File>) FileUtils.listFiles(rootDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
@@ -278,7 +280,12 @@ class Git {
         }
     }
 
+    void reset() throws IOException {
+        CommitInfo headCommitInfo = objects.getCommitInfo(head.getHead());
+        head.setHead(headCommitInfo.getParentHash());
+    }
     // this is for testing
+
     Integer getNumberOfObjectsFiles() {
         return objects.getNumberOfObjectsFiles();
     }
@@ -286,5 +293,4 @@ class Git {
     public HashSet<String> getListOfObjectsFiles() {
         return objects.getListOfFiles();
     }
-
 }
