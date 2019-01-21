@@ -251,8 +251,6 @@ class Git {
     void status() throws IOException {
         Map<String, String> indexInMap = index.convertToMap();
 
-        System.out.println("head now " + head.getHead());
-
         File rootDir = new File(pwd);
 
         List<File> files = (List<File>) FileUtils.listFiles(rootDir, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
