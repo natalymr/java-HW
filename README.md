@@ -16,9 +16,19 @@
 
 ![start](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/start.png?raw=true)
 
-### Results Page
+## Results
 
-![results](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results.png?raw=true)
+### Server 1: thread per client
+
+![result1](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/resultsThreadPerClient.png?raw=true)
+
+### Server 2: sort in thread pool
+
+![result2](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/resultsSortInThreadPool.png?raw=true)
+
+### Server 3: non blocking 
+
+![result3](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/resultsNonBlocking.png?raw=true)
 
 ## Application Architecture
 
