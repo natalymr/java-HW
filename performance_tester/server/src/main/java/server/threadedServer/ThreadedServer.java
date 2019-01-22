@@ -1,5 +1,6 @@
 package server.threadedServer;
 
+import network.ClientConnection;
 import network.Connection;
 import server.ServerBase;
 import statistics.StatisticsPerClient;
@@ -21,8 +22,8 @@ public class ThreadedServer extends ServerBase {
 
     private final ServerSocket threadedServerSocket;
 
-    public ThreadedServer(InetAddress inetAddress, short port, TestingParameters testingParameters) throws IOException {
-        super(inetAddress, port, testingParameters);
+    public ThreadedServer(InetAddress inetAddress, short port) throws IOException {
+        super(inetAddress, port);
         threadedServerSocket = new ServerSocket(port);
     }
 
@@ -65,7 +66,7 @@ class ThreadedServerRunnable implements Runnable {
 
     @Override
     public void run() {
-        try (Connection server2client = new Connection(socket)) {
+        try (ClientConnection server2client = new ClientConnection(socket)) {
             while (true) {
                 System.out.println("start to sort");
                 long startRequest; long endRequest;

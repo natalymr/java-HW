@@ -12,6 +12,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.TextField;
 import network.Connection;
 import network.client.ClientManager;
+import server.ServerType;
 import statistics.StatisticsResultPerIteration;
 import statistics.TestingParameters;
 import statistics.VaryingParameter;
@@ -27,11 +28,18 @@ import java.util.List;
 import static server.serverManager.ServerManager.RUN_SERVER;
 import static server.serverManager.ServerManager.SEND_RESULTS;
 
+import static server.ServerType.sortInThreadPool;
+import static server.ServerType.threadPerClient;
+
 public class Controller {
 
     // configurations
     private ObservableList<String> serversArchList = FXCollections
-            .observableArrayList("first", "second", "third");
+        .observableArrayList(
+            ServerType.threadPerClient.getTypeInString(),
+            ServerType.sortInThreadPool.getTypeInString(),
+            ServerType.nonBlockingServer.getTypeInString());
+
     private ObservableList<String> varyingParameters = FXCollections
             .observableArrayList("M", "N", "delay");
     @FXML
@@ -107,7 +115,7 @@ public class Controller {
         // TODO what port + inetaddress to choose
         try (Connection serverManager2gui = new Connection(new Socket("localhost", 6666))) {
             serverManager2gui.sendRequestByte(RUN_SERVER);
-            serverManager2gui.sendServerType(serverArchBox.getValue());
+            serverManager2gui.sendServerType(parseServerTypeFromServerArchBox());
             serverManager2gui.sendInetAddress(inetAddress);
             serverManager2gui.sendPort(port);
             serverManager2gui.sendParameters(testingParameters);
@@ -189,6 +197,22 @@ public class Controller {
         } catch (UnsupportedEncodingException ignored) {
             new Alert(Alert.AlertType.INFORMATION, "Can not write results to file!").showAndWait();
         }
+    }
+
+    private ServerType parseServerTypeFromServerArchBox() {
+        switch (serverArchBox.getValue()) {
+            case "threadPerClient": {
+                return ServerType.threadPerClient;
+            }
+            case "sortInThreadPool": {
+                return ServerType.sortInThreadPool;
+            }
+            case "nonBlockingServer": {
+                return ServerType.nonBlockingServer;
+            }
+        }
+
+        return null;
     }
 
     private void showAlertMessage() {

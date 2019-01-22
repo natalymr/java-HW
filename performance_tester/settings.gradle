@@ -1,3 +1,4 @@
 rootProject.name = 'performance_tester'
 include 'server'
+include 'commons'
 

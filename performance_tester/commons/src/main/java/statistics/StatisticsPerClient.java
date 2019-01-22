@@ -1,6 +1,7 @@
 package statistics;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class StatisticsPerClient {
@@ -10,7 +11,7 @@ public class StatisticsPerClient {
 
     public StatisticsPerClient(short id) {
         this.id = id;
-        timeStamps = new ArrayList<>();
+        timeStamps = Collections.synchronizedList(new ArrayList<>());
     }
 
     short getId() {
@@ -21,8 +22,13 @@ public class StatisticsPerClient {
         timeStamps.add(timeStamp);
     }
 
-    public List<TimeStamp> getTimeStamps() {
+    List<TimeStamp> getTimeStamps() {
         return timeStamps;
+    }
+
+    public TimeStamp getLast() {
+        timeStamps.add(new TimeStamp());
+        return timeStamps.get(timeStamps.size() - 1);
     }
 }
 

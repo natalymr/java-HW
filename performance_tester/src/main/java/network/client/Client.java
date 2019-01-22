@@ -1,5 +1,6 @@
 package network.client;
 
+import network.ClientConnection;
 import network.Connection;
 
 import java.io.IOException;
@@ -21,7 +22,7 @@ public class Client implements Runnable {
 
     private final InetAddress inetAddress;
     private final short port;
-    private volatile Connection client2server;
+    private volatile ClientConnection client2server;
 
     private final List<List<Integer>> data = new ArrayList<>();
 
@@ -42,7 +43,7 @@ public class Client implements Runnable {
 
     @Override
     public void run() {
-        try (Connection client2server  = new Connection(new Socket(inetAddress, port))) {
+        try (ClientConnection client2server  = new ClientConnection(new Socket(inetAddress, port))) {
             this.client2server = client2server;
 
             System.out.println("Client # " + Thread.currentThread().getId());

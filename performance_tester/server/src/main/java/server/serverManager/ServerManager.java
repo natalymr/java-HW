@@ -1,7 +1,10 @@
 package server.serverManager;
 
 import network.Connection;
+import server.NonBlockingServer.NonBlockingServer;
 import server.ServerBase;
+import server.ServerType;
+import server.threadPoolServer.ThreadPoolServer;
 import server.threadedServer.ThreadedServer;
 import statistics.StatisticsResultPerIteration;
 import statistics.TestingParameters;
@@ -41,22 +44,26 @@ public class ServerManager {
                             System.out.println("SM: request 1");
 
                             // get testingParameters about testing
-                            String serverType = guiORclientM2serverM.getServerType();
+                            ServerType serverType = guiORclientM2serverM.getServerType();
                             InetAddress inetAddress = guiORclientM2serverM.getInetAddress();
                             Short port = guiORclientM2serverM.getPort();
                             testingParameters = guiORclientM2serverM.getParameters();
 
                             // run server
                             switch (serverType) {
-                                case "first": {
+                                case threadPerClient: {
                                     System.out.println("first server");
-                                    server = new ThreadedServer(inetAddress, port, testingParameters);
+                                    server = new ThreadedServer(inetAddress, port);
                                     break;
                                 }
-                                case "second": {
+                                case sortInThreadPool: {
+                                    System.out.println("second server");
+                                    server = new ThreadPoolServer(inetAddress, port, 4);
                                     break;
                                 }
-                                case "third": {
+                                case nonBlockingServer: {
+                                    System.out.println("third server");
+                                    server = new NonBlockingServer(inetAddress, port, 4);
                                     break;
                                 }
                             }

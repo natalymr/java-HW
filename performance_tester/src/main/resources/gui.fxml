@@ -292,7 +292,7 @@
                   <Insets left="10.0" />
                </GridPane.margin>
             </Label>
-            <Label text="N - array size," textFill="#686666" GridPane.columnIndex="1">
+            <Label text="N - sortedArray size," textFill="#686666" GridPane.columnIndex="1">
                <GridPane.margin>
                   <Insets left="10.0" />
                </GridPane.margin>
