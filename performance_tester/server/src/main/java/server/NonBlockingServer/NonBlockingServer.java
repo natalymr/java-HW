@@ -123,9 +123,16 @@ class Reader implements Runnable {
                     AttachingDataRead attachingDataRead = (AttachingDataRead) selectionKey.attachment();
 
                     // установим время начала обработки, если еще до этого не установили
-                    TimeStamp times = attachingDataRead.getLocalStatistics().getLast();
-                    if (times.getStartRequest() == 0) {
-                        times.setStartRequest(System.currentTimeMillis());
+                    TimeStamp currentTimeStamp;
+                    if (attachingDataRead.getCurrentTimeStamp() == null) {
+                        currentTimeStamp = new TimeStamp();
+                        attachingDataRead.setCurrentTimeStamp(currentTimeStamp);
+                    } else {
+                        currentTimeStamp = attachingDataRead.getCurrentTimeStamp();
+                    }
+
+                    if (currentTimeStamp.getStartRequest() == 0) {
+                        currentTimeStamp.setStartRequest(System.currentTimeMillis());
                     }
 
                     int bytesRead;
@@ -143,15 +150,16 @@ class Reader implements Runnable {
 
                                 pool.execute(() -> {
                                     // не забудем записать время
-                                    times.setStartSort(System.currentTimeMillis());
+                                    currentTimeStamp.setStartSort(System.currentTimeMillis());
                                     sort(sortedArray);
-                                    times.setEndSort(System.currentTimeMillis());
+                                    currentTimeStamp.setEndSort(System.currentTimeMillis());
 
                                     sharedQueueWrite.add(
                                         new SocketChannelAndAttachingDataWrite(
                                             socketChannel,
                                             new AttachingDataWrite(
                                                 sortedArray,
+                                                currentTimeStamp,
                                                 attachingDataRead.getLocalStatistics(),
                                                 attachingDataRead.getGlobalStatistic())
                                         )
@@ -243,18 +251,20 @@ class Writer implements Runnable {
                         if (attachingDataWrite.isSizeSend()) {
                             // тогда отправляем массив
                             ByteBuffer arrayBuffer = attachingDataWrite.getByteBufferForArray();
-                            int write = socketChannel.write(arrayBuffer);
+                            socketChannel.write(arrayBuffer);
 
                             if (arrayBuffer.position() == arrayBuffer.limit()) {
                                 // запишем время окончания запроса
-                                attachingDataWrite.getLocalStatistics().getLast().setEndRequest(System.currentTimeMillis());
+                                TimeStamp currentTimeStamp = attachingDataWrite.getCurrentTimeStamp();
+                                currentTimeStamp.setEndRequest(System.currentTimeMillis());
+                                attachingDataWrite.getLocalStatistics().addNewStamp(currentTimeStamp);
 
                                 selectionKey.cancel();
                             }
                         } else {
                             // отправляем размер массива
                             ByteBuffer sizeBuffer = attachingDataWrite.getByteBufferForSize();
-                            int write = socketChannel.write(sizeBuffer);
+                            socketChannel.write(sizeBuffer);
 
                             if (sizeBuffer.position() == sizeBuffer.limit()) {
                                 attachingDataWrite.setSizeIsSend();
@@ -276,6 +286,7 @@ class Writer implements Runnable {
 class AttachingDataRead {
     private final StatisticsPerClient localStatistics;
     private final StatisticsPerIteration globalStatistics;
+    private TimeStamp currentTimeStamp;
 
     private final ByteBuffer arraySize;
     private ByteBuffer array;
@@ -297,6 +308,14 @@ class AttachingDataRead {
         return globalStatistics;
     }
 
+    TimeStamp getCurrentTimeStamp() {
+        return currentTimeStamp;
+    }
+
+    void  setCurrentTimeStamp(TimeStamp timeStamp) {
+        currentTimeStamp = timeStamp;
+    }
+
     ByteBuffer getByteBufferForSize() {
         return arraySize;
     }
@@ -310,7 +329,6 @@ class AttachingDataRead {
 
         arraySize.flip();
         int size = arraySize.getInt();
-        System.out.println("Array size is " + size);
         array = ByteBuffer.allocate(size);
     }
 
@@ -361,15 +379,18 @@ class SocketChannelAndAttachingDataRead {
 class AttachingDataWrite {
     private final StatisticsPerClient localStatistics;
     private final StatisticsPerIteration globalStatistics;
+    private TimeStamp currentTimeStamp;
+
     private final List<Integer> sortedArray;
     private final ByteBuffer arraySize = ByteBuffer.allocate(4);
     private final ByteBuffer array;
     private boolean isSizeSend = false;
 
     AttachingDataWrite(List<Integer> sortedArray,
-                       StatisticsPerClient localStatistics, StatisticsPerIteration globalStatistic) {
+                       TimeStamp currentTimeStamp, StatisticsPerClient localStatistics, StatisticsPerIteration globalStatistic) {
         this.localStatistics = localStatistics;
         this.globalStatistics = globalStatistic;
+        this.currentTimeStamp = currentTimeStamp;
         this.sortedArray = sortedArray;
 
         // convert array in protobuf mode
@@ -385,8 +406,12 @@ class AttachingDataWrite {
         array.flip();
     }
 
-    public StatisticsPerClient getLocalStatistics() {
+    StatisticsPerClient getLocalStatistics() {
         return localStatistics;
+    }
+
+    TimeStamp getCurrentTimeStamp() {
+        return currentTimeStamp;
     }
 
     boolean isSizeSend() {

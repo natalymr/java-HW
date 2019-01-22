@@ -73,4 +73,12 @@ public class TestingParameters implements Iterable<ParametersPerIteration>, Seri
 
         return it;
     }
+
+    public int getN() {
+        return n;
+    }
+
+    public int getM() {
+        return m;
+    }
 }

@@ -27,8 +27,34 @@ public class StatisticsPerClient {
     }
 
     public TimeStamp getLast() {
-        timeStamps.add(new TimeStamp());
+        if (timeStamps.isEmpty()) {
+            TimeStamp newTimeStamp = new TimeStamp();
+            timeStamps.add(newTimeStamp);
+            return newTimeStamp;
+        }
+
         return timeStamps.get(timeStamps.size() - 1);
+    }
+
+    public boolean checkLastIsNotCompleted() {
+        if (timeStamps.isEmpty()) {
+            return true;
+        }
+
+        TimeStamp last = timeStamps.get(timeStamps.size() - 1);
+
+        if (last.getStartRequest() != 0 && last.getStartSort() == 0) {
+            return false;
+        }
+
+        if (last.getStartRequest() == 0 &&
+            last.getStartSort() == 0 &&
+            last.getEndSort() == 0 &&
+            last.getEndRequest() == 0) {
+            return false;
+        }
+
+        return true;
     }
 }
 

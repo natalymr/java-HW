@@ -30,7 +30,7 @@ public class TimeStamp {
         return endSort;
     }
 
-    public long getEndRequest() {
+    long getEndRequest() {
         return endRequest;
     }
 
@@ -48,5 +48,12 @@ public class TimeStamp {
 
     public void setEndRequest(long endRequest) {
         this.endRequest = endRequest;
+    }
+
+    public void reset() {
+        startRequest = 0;
+        startSort = 0;
+        endSort = 0;
+        endRequest = 0;
     }
 }

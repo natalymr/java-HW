@@ -68,7 +68,6 @@ class ThreadedServerRunnable implements Runnable {
     public void run() {
         try (ClientConnection server2client = new ClientConnection(socket)) {
             while (true) {
-                System.out.println("start to sort");
                 long startRequest; long endRequest;
                 long startSort; long endSort;
 
@@ -84,10 +83,9 @@ class ThreadedServerRunnable implements Runnable {
                     break;
                 }
 
-                System.out.println("get data");
-                startSort = System.currentTimeMillis();
-
                 ArrayList<Integer> sortedArray = new ArrayList<>(array);
+
+                startSort = System.currentTimeMillis();
                 sort(sortedArray);
                 endSort = System.currentTimeMillis();
 

@@ -46,14 +46,9 @@ public class Client implements Runnable {
         try (ClientConnection client2server  = new ClientConnection(new Socket(inetAddress, port))) {
             this.client2server = client2server;
 
-            System.out.println("Client # " + Thread.currentThread().getId());
             for (int i = 0; i < x; i++) {
                 client2server.sendArray(data.get(i));
                 List<Integer> integers = client2server.getArray();
-
-                //System.out.println("unsorted " + data.get(i) + " sorted " + integers);
-
-                System.out.println("send data");
 
                 Thread.sleep(delay);
             }
@@ -63,7 +58,7 @@ public class Client implements Runnable {
         } catch (InterruptedException ignored) {}
     }
 
-    public void stop() throws IOException {
+    void stop() throws IOException {
         if (client2server != null) {
             client2server.close();
         }

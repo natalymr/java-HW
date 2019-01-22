@@ -28,8 +28,6 @@ import java.util.List;
 import static server.serverManager.ServerManager.RUN_SERVER;
 import static server.serverManager.ServerManager.SEND_RESULTS;
 
-import static server.ServerType.sortInThreadPool;
-import static server.ServerType.threadPerClient;
 
 public class Controller {
 
@@ -98,16 +96,16 @@ public class Controller {
         XYChart.Series<Integer, Double> timeForAllRequests = new XYChart.Series<>();
 
         // CHECK FILLED DATA
-//        if (checkFieldsFillingFAILED()) {
-//            System.out.println("Not all the fields were filled");
-//            new Alert(Alert.AlertType.INFORMATION, "fill aaaaall fields please").showAndWait();
-//            return;
-//        }
+        if (checkFieldsFillingFAILED()) {
+            new Alert(Alert.AlertType.INFORMATION, "fill all fields please").showAndWait();
+            return;
+        }
 
         // PARSE FILLED DATA
         InetAddress inetAddress = parseInetAddress();
         short port = parsePort();
         TestingParameters testingParameters = parseParameters();
+        ServerType serverType = parseServerTypeFromServerArchBox();
 
         boolean serverStatus = false;
 
@@ -115,7 +113,7 @@ public class Controller {
         // TODO what port + inetaddress to choose
         try (Connection serverManager2gui = new Connection(new Socket("localhost", 6666))) {
             serverManager2gui.sendRequestByte(RUN_SERVER);
-            serverManager2gui.sendServerType(parseServerTypeFromServerArchBox());
+            serverManager2gui.sendServerType(serverType);
             serverManager2gui.sendInetAddress(inetAddress);
             serverManager2gui.sendPort(port);
             serverManager2gui.sendParameters(testingParameters);
@@ -172,21 +170,32 @@ public class Controller {
             sortingTimeLineChart.getData().add(sortingTimes);
             requestTimeLineChart.getData().add(requestingTimes);
             averageTimeForAllRequestsLineChart.getData().add(timeForAllRequests);
-            writeResultsToFile(statisticsResults);
+            writeResultsToFile(statisticsResults, serverType, testingParameters);
         }
+        System.out.println("Computing finished");
     }
 
-    private void writeResultsToFile(List<StatisticsResultPerIteration> statisticsResults) throws IOException {
-        // write to file
+    private void writeResultsToFile(List<StatisticsResultPerIteration> statisticsResults,
+                                    ServerType serverType,
+                                    TestingParameters testingParameters) throws IOException {
+        // file name
         String fileForResultsName = FileSystems.getDefault().getPath(".").toAbsolutePath().toString()
             + File.separator
-            + "PerformanceTesterResults"
+            + "PerformanceTesterResults_"
+            + serverType.getTypeInString()
+            + "_"
+            + testingParameters.getVaryingParameter().getVaryingParameterInString()
+            + "_"
             + System.currentTimeMillis()
             + ".csv";
 
         File fileForResults = new File(fileForResultsName);
         try (Writer fileWriter = new BufferedWriter(new OutputStreamWriter(
             new FileOutputStream(fileForResults), StandardCharsets.UTF_8))) {
+            // write parameter
+            fileWriter.write(concatTestingParametersValue(testingParameters));
+
+            // write results
             for (StatisticsResultPerIteration result : statisticsResults) {
                 fileWriter.write(result.getCurrentValueOfVaryingParameter() + ";"
                         + result.getAverageValues().getSortingTime() + ";"
@@ -197,6 +206,44 @@ public class Controller {
         } catch (UnsupportedEncodingException ignored) {
             new Alert(Alert.AlertType.INFORMATION, "Can not write results to file!").showAndWait();
         }
+    }
+
+    private String concatTestingParametersValue(TestingParameters testingParameters) {
+        StringBuilder stringBuilder = new StringBuilder();
+
+        stringBuilder
+            .append("X = ")
+            .append(testingParameters.getX());
+
+        switch (testingParameters.getVaryingParameter()) {
+            case M: {
+                stringBuilder
+                    .append(" N = ")
+                    .append(testingParameters.getN())
+                    .append(" delay = ")
+                    .append(testingParameters.getDelay());
+                break;
+            }
+            case N: {
+                stringBuilder
+                    .append(" M = ")
+                    .append(testingParameters.getM())
+                    .append(" delay = ")
+                    .append(testingParameters.getDelay());
+                break;
+            }
+            case delay: {
+                stringBuilder
+                    .append(" M = ")
+                    .append(testingParameters.getM())
+                    .append(" N = ")
+                    .append(testingParameters.getN());
+                break;
+            }
+        }
+
+        stringBuilder.append("\n");
+        return stringBuilder.toString();
     }
 
     private ServerType parseServerTypeFromServerArchBox() {

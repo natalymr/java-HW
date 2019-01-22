@@ -164,12 +164,12 @@
                   <Insets left="5.0" />
                </opaqueInsets>
                <GridPane.margin>
-                  <Insets left="15.0" />
+                  <Insets left="18.0" />
                </GridPane.margin>
             </Label>
             <Label text="N:" GridPane.columnIndex="1" GridPane.rowIndex="4">
                <GridPane.margin>
-                  <Insets left="115.0" />
+                  <Insets left="117.0" />
                </GridPane.margin>
                <font>
                   <Font name="Droid Sans Fallback" size="14.0" />
@@ -195,7 +195,7 @@
             </Label>
             <Label text="step:" GridPane.columnIndex="1" GridPane.rowIndex="3">
                <GridPane.margin>
-                  <Insets left="220.0" />
+                  <Insets left="225.0" />
                </GridPane.margin>
             </Label>
          </children>
@@ -292,7 +292,7 @@
                   <Insets left="10.0" />
                </GridPane.margin>
             </Label>
-            <Label text="N - array size," textFill="#686666" GridPane.columnIndex="1">
+            <Label text="N - sortedArray size," textFill="#686666" GridPane.columnIndex="1">
                <GridPane.margin>
                   <Insets left="10.0" />
                </GridPane.margin>

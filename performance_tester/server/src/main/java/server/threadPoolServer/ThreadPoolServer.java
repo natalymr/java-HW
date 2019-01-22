@@ -94,7 +94,6 @@ class ThreadPoolServerRunnable implements Runnable {
                 // sort
                 ArrayList<Integer> sortedArray = new ArrayList<>(array);
                 threadPoolForSorting.execute(() -> {
-                    System.out.println("start to sort");
                     times.setStartSort(System.currentTimeMillis());
                     sort(sortedArray);
                     times.setEndSort(System.currentTimeMillis());

@@ -28,8 +28,6 @@ public class ServerManager {
 
     public static void main(String[] args) {
 
-        System.out.println("SM hw");
-
         List<StatisticsResultPerIteration> statisticsResults = new ArrayList<>();
         TestingParameters testingParameters = null;
 
@@ -41,8 +39,6 @@ public class ServerManager {
 
                         // listen GUI (get parameters about testing and run server with needed type)
                         case RUN_SERVER: {
-                            System.out.println("SM: request 1");
-
                             // get testingParameters about testing
                             ServerType serverType = guiORclientM2serverM.getServerType();
                             InetAddress inetAddress = guiORclientM2serverM.getInetAddress();
@@ -52,17 +48,14 @@ public class ServerManager {
                             // run server
                             switch (serverType) {
                                 case threadPerClient: {
-                                    System.out.println("first server");
                                     server = new ThreadedServer(inetAddress, port);
                                     break;
                                 }
                                 case sortInThreadPool: {
-                                    System.out.println("second server");
                                     server = new ThreadPoolServer(inetAddress, port, 4);
                                     break;
                                 }
                                 case nonBlockingServer: {
-                                    System.out.println("third server");
                                     server = new NonBlockingServer(inetAddress, port, 4);
                                     break;
                                 }
@@ -75,7 +68,6 @@ public class ServerManager {
                         }
                         // listen GUI (get request about statistics results, send it)
                         case SEND_RESULTS: {
-                            System.out.println("SM: request 2");
                             guiORclientM2serverM.sendStatisticsResults(statisticsResults);
 
                             // clear current result
@@ -90,13 +82,11 @@ public class ServerManager {
                         }
                         // lister client manager (clear statistics)
                         case CLEAR_CUR_STATS: {
-                            System.out.println("SM: request 3");
                             server.clearStatisticsPerIteration();
                             break;
                         }
                         // lister client manager (compute statistics)
                         case SAVE_CUR_STATS: {
-                            System.out.println("SM: request 4");
                             // get all needed data
                             int varyingParameterCurrentValue = guiORclientM2serverM.getVaryingParameterCurrentValue();
                             if (testingParameters == null) break;

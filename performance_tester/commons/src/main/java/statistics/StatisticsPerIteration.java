@@ -1,5 +1,6 @@
 package statistics;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -26,14 +27,16 @@ public class StatisticsPerIteration {
 
         // 3. filter times & compute statistics
         int count = 0;
-        long timeOne = 0; long timeTwo = 0; long timeThree = 0;
+        int correctClientsCount = 0;
+        double timeOne = 0; double timeTwo = 0;
+        List<Double> timeThrees = new ArrayList<>();
         for (Map.Entry<Short, StatisticsPerClient> client : clientVSstatistics.entrySet()) {
             // filter
             List<TimeStamp> clientsTimeStamp = client.getValue().getTimeStamps();
             List<TimeStamp> filteredTimesPerClient = clientsTimeStamp
                 .stream()
-                .filter((timeStamp) -> timeStamp.getStartRequest() >= start)
-                .filter((timeStamp) -> timeStamp.getEndRequest() <= end)
+                .filter(timeStamp -> timeStamp.getStartRequest() >= start)
+                .filter(timeStamp -> timeStamp.getEndRequest() <= end)
                 .collect(Collectors.toList());
 
             // statistic
@@ -42,19 +45,24 @@ public class StatisticsPerIteration {
                 timeOne += (stamp.getEndSort() - stamp.getStartSort());
                 timeTwo += (stamp.getEndRequest() - stamp.getStartRequest());
             }
-            System.out.println("filtered size = " + filteredTimesPerClient.size());
 
             if (filteredTimesPerClient.size() > 0) {
-                timeThree += (filteredTimesPerClient.get(filteredTimesPerClient.size() - 1).getEndRequest() -
+                correctClientsCount += 1;
+                double timeThree = (filteredTimesPerClient.get(filteredTimesPerClient.size() - 1).getEndRequest() -
                     filteredTimesPerClient.get(0).getStartRequest()) - delay;
+                timeThrees.add((timeThree / filteredTimesPerClient.size()));
             }
+
         }
 
         timeOne /= (1. * count);
         timeTwo /= (1. * count);
-        timeThree /= (1. * count);
+        double timeThree = 0;
+        for (Double times : timeThrees) {
+            timeThree += times;
+        }
 
-        return new AverageValues(timeOne, timeTwo, timeThree);
+        return new AverageValues(timeOne, timeTwo, (timeThree / correctClientsCount));
     }
 
     private long findStartOfTimeWhereAllClientsConnectedToServer() {

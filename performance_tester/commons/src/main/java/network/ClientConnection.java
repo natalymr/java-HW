@@ -28,7 +28,6 @@ public class ClientConnection implements AutoCloseable {
     public List<Integer> getArray() throws IOException {
         // get an answer in protobuf mode
         int arraySize = dataInputStream.readInt();
-        System.out.println("getArray size is " + arraySize);
         byte[] bytes = new byte[arraySize];
         dataInputStream.readFully(bytes);
         IntArray intArray = IntArray.parseFrom(bytes);
@@ -42,7 +41,6 @@ public class ClientConnection implements AutoCloseable {
         IntArray result = array2send.build();
 
         // write array size
-        System.out.println("sendArray size is " + result.getSerializedSize());
         dataOutputStream.writeInt(result.getSerializedSize());
 
         // write array
