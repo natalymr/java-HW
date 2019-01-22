@@ -1,12 +1,14 @@
 plugins {
     id 'java'
     id 'idea'
+    id 'application'
 //    id 'com.google.protobuf' version '0.8.7'
 }
 
 group 'ru.itmo.performance_tester'
 version '1.0-SNAPSHOT'
 
+mainClassName = "gui.PerformanceTester"
 sourceCompatibility = 1.8
 
 repositories {
