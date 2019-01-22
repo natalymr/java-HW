@@ -1,5 +1,12 @@
 # Server Performance Tester
 
+## Запуск приложения
+
+Для запуска приложения необходимо:
+1. **собрать проект**, для этого в корневой директории проекта выполнить команду `./gradlew installDist`
+2. **запустить сервер**, для этого нужно выполнить команду `./server/build/install/server/bin/server`
+3. **запустить GUI**, для этого нужно выполнить команду `./build/install/performance_tester/bin/performance_tester`
+
 ## GUI
 
 ### Start Page
