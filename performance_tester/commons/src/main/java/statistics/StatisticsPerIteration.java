@@ -69,8 +69,11 @@ public class StatisticsPerIteration {
         // compute as max
         long result = Long.MIN_VALUE;
 
-        for (Map.Entry<Short, StatisticsPerClient> client : clientVSstatistics.entrySet()) {
-            long tmp = client.getValue().getTimeStamps().get(0).getStartRequest();
+        for (Map.Entry<Short, StatisticsPerClient> clientAndStatistics : clientVSstatistics.entrySet()) {
+            if (clientAndStatistics.getValue().getTimeStamps().isEmpty()) {
+                continue;
+            }
+            long tmp = clientAndStatistics.getValue().getTimeStamps().get(0).getStartRequest();
 
             if (tmp > result)
                 result = tmp;
@@ -83,8 +86,12 @@ public class StatisticsPerIteration {
         // compute as min
         long result = Long.MAX_VALUE;
 
-        for (Map.Entry<Short, StatisticsPerClient> client : clientVSstatistics.entrySet()) {
-            List<TimeStamp> times = client.getValue().getTimeStamps();
+        for (Map.Entry<Short, StatisticsPerClient> clientAndStatistic : clientVSstatistics.entrySet()) {
+            List<TimeStamp> times = clientAndStatistic.getValue().getTimeStamps();
+            if (times.isEmpty()) {
+                continue;
+            }
+
             long tmp = times.get(times.size() - 1).getEndRequest();
 
             if (result > tmp)

@@ -35,9 +35,9 @@ public class ClientManager {
         Iterator<ParametersPerIteration> parametersPerIterationIterator = testingParameters.iterator();
 
         while (parametersPerIterationIterator.hasNext()) {
-            System.out.println("new iteration");
 
             ParametersPerIteration currentIterationParameters = parametersPerIterationIterator.next();
+            System.out.println("new iteration " + currentIterationParameters.getVaryingParameterCurrentValue());
 
             // connect to server manager; new iteration
             try (Connection clientM2serverM = new Connection(new Socket(inetAddress, SERVER_MANAGER_PORT))) {
