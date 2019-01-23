@@ -1,0 +1,15 @@
+package protobuf;
+option java_multiple_files = true;
+
+message IntArray {
+    repeated int32 array = 1 [packed=true];
+}
+
+
+//syntax = "proto3";
+//
+//option java_package = "proto";
+//
+//message IntArrayJob {
+//    repeated int32 data = 1;
+//}
