@@ -45,14 +45,14 @@ public class StatisticsPerIteration {
                 timeTwo += (stamp.getEndRequest() - stamp.getStartRequest());
             }
 
-            if (filteredTimesPerClient.size() > 0) {
-                correctClientsCount += 1;
-
-                double timeThree = (filteredTimesPerClient.get(filteredTimesPerClient.size() - 1).getEndRequest() -
-                    filteredTimesPerClient.get(0).getStartRequest());
-
-                timeThrees.add((timeThree / filteredTimesPerClient.size()));
-            }
+//            if (filteredTimesPerClient.size() > 0) {
+//                correctClientsCount += 1;
+//
+//                double timeThree = (filteredTimesPerClient.get(filteredTimesPerClient.size() - 1).getEndRequest() -
+//                    filteredTimesPerClient.get(0).getStartRequest());
+//
+//                timeThrees.add((timeThree / filteredTimesPerClient.size()));
+//            }
 
         }
 
@@ -80,10 +80,10 @@ public class StatisticsPerIteration {
 
         timeOne /= (1. * count);
         timeTwo /= (1. * count);
-        double timeThree = 0;
-        for (Double times : timeThrees) {
-            timeThree += times;
-        }
+//        double timeThree = 0;
+//        for (Double times : timeThrees) {
+//            timeThree += times;
+//        }
 
         return new AverageValues(timeOne, timeTwo, averageClientTime/*(timeThree / correctClientsCount)*/);
     }

@@ -71,17 +71,18 @@ class ThreadedServerRunnable implements Runnable {
                 long startRequest; long endRequest;
                 long startSort; long endSort;
 
-                List<Integer> array;
 
+                int arraySize;
                 try {
+                    arraySize = server2client.getArraySize();
                     startRequest = System.currentTimeMillis();
-                    array = server2client.getArray();
 
                 } catch (EOFException e) {
                     // if there is no msg from client we should stop working
                     globalStatisticsPerIteration.addNewStatisticsPerClient(statistics);
                     break;
                 }
+                List<Integer> array = server2client.getArray(arraySize);
 
                 ArrayList<Integer> sortedArray = new ArrayList<>(array);
 

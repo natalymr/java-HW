@@ -42,7 +42,7 @@ public class ServerManager {
 
                         // listen GUI (get parameters about testing and run server with needed type)
                         case RUN_SERVER: {
-                            System.out.println("get new job");
+                            System.out.println("got a job");
                             // get testingParameters about testing
                             ServerType serverType = guiORclientM2serverM.getServerType();
                             InetAddress inetAddress = guiORclientM2serverM.getInetAddress();

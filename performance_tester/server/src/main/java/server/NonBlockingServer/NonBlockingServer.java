@@ -122,23 +122,23 @@ class Reader implements Runnable {
                     SocketChannel socketChannel = (SocketChannel) selectionKey.channel();
                     AttachingDataRead attachingDataRead = (AttachingDataRead) selectionKey.attachment();
 
-                    // установим время начала обработки, если еще до этого не установили
-                    TimeStamp currentTimeStamp;
-                    if (attachingDataRead.getCurrentTimeStamp() == null) {
-                        currentTimeStamp = new TimeStamp();
-                        attachingDataRead.setCurrentTimeStamp(currentTimeStamp);
-                    } else {
-                        currentTimeStamp = attachingDataRead.getCurrentTimeStamp();
-                    }
-
-                    if (currentTimeStamp.getStartRequest() == 0) {
-                        currentTimeStamp.setStartRequest(System.currentTimeMillis());
-                    }
-
                     int bytesRead;
 
                     try {
                         if (attachingDataRead.isSizeReady()) {
+                            // установим время начала обработки, если еще до этого не установили
+                            TimeStamp currentTimeStamp;
+                            if (attachingDataRead.getCurrentTimeStamp() == null) {
+                                currentTimeStamp = new TimeStamp();
+                                attachingDataRead.setCurrentTimeStamp(currentTimeStamp);
+                            } else {
+                                currentTimeStamp = attachingDataRead.getCurrentTimeStamp();
+                            }
+
+                            if (currentTimeStamp.getStartRequest() == 0) {
+                                currentTimeStamp.setStartRequest(System.currentTimeMillis());
+                            }
+
                             // тогда считываем массив
                             ByteBuffer arrayBuffer = attachingDataRead.getByteBufferForArray();
                             bytesRead = socketChannel.read(arrayBuffer);

@@ -82,9 +82,9 @@ class ThreadPoolServerRunnable implements Runnable {
                 // get
                 List<Integer> array;
                 try {
+                    int arraySize = server2client.getArraySize();
                     times.setStartRequest(System.currentTimeMillis());
-
-                    array = server2client.getArray();
+                    array = server2client.getArray(arraySize);
 
                 } catch (EOFException e) {
                     // if there is no msg from client we should stop working

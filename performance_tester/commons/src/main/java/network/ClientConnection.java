@@ -34,6 +34,21 @@ public class ClientConnection implements AutoCloseable {
         return intArray.getArrayList();
     }
 
+    public int getArraySize() throws IOException {
+        return dataInputStream.readInt();
+    }
+
+
+    public List<Integer> getArray(int arraySize) throws IOException {
+        // get an answer in protobuf mode
+
+        byte[] bytes = new byte[arraySize];
+        dataInputStream.readFully(bytes);
+        IntArray intArray = IntArray.parseFrom(bytes);
+        return intArray.getArrayList();
+    }
+
+
     public void sendArray(List<Integer> array) throws IOException {
         // convert array in protobuf mode
         IntArray.Builder array2send = IntArray.newBuilder();
