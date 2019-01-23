@@ -99,6 +99,7 @@ class ThreadPoolServerRunnable implements Runnable {
                     times.setEndSort(System.currentTimeMillis());
 
                     // send
+                    if (singleThread.isShutdown()) return;
                     singleThread.execute(() -> {
                         try {
                             server2client.sendArray(sortedArray);

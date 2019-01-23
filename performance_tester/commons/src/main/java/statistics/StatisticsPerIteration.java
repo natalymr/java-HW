@@ -1,8 +1,6 @@
 package statistics;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -28,7 +26,8 @@ public class StatisticsPerIteration {
         // 3. filter times & compute statistics
         int count = 0;
         int correctClientsCount = 0;
-        double timeOne = 0; double timeTwo = 0;
+        double timeOne = 0;
+        double timeTwo = 0;
         List<Double> timeThrees = new ArrayList<>();
         for (Map.Entry<Short, StatisticsPerClient> client : clientVSstatistics.entrySet()) {
             // filter
@@ -48,12 +47,36 @@ public class StatisticsPerIteration {
 
             if (filteredTimesPerClient.size() > 0) {
                 correctClientsCount += 1;
+
                 double timeThree = (filteredTimesPerClient.get(filteredTimesPerClient.size() - 1).getEndRequest() -
-                    filteredTimesPerClient.get(0).getStartRequest()) - delay;
+                    filteredTimesPerClient.get(0).getStartRequest());
+
                 timeThrees.add((timeThree / filteredTimesPerClient.size()));
             }
 
         }
+
+        double averageClientTime = clientVSstatistics.values().stream()
+            .map(statisticsPerClient -> {
+                List<TimeStamp> correctTimeStamps = statisticsPerClient.getTimeStamps().stream()
+                    .filter(timeStamp -> timeStamp.getStartRequest() >= start)
+                    .filter(timeStamp -> timeStamp.getEndRequest() <= end)
+                    .collect(Collectors.toList());
+
+                if (correctTimeStamps.isEmpty()) {
+                    return null;
+                }
+
+                TimeStamp firstCorrect = correctTimeStamps.get(0);
+                TimeStamp lastCorrect = correctTimeStamps.get(correctTimeStamps.size() - 1);
+
+                double totalClientTime = lastCorrect.getEndRequest() - firstCorrect.getStartRequest();
+                return totalClientTime / correctTimeStamps.size() - delay;
+            })
+            .filter(Objects::nonNull)
+            .mapToDouble(avg -> avg)
+            .average()
+            .orElse(0.0);
 
         timeOne /= (1. * count);
         timeTwo /= (1. * count);
@@ -62,7 +85,7 @@ public class StatisticsPerIteration {
             timeThree += times;
         }
 
-        return new AverageValues(timeOne, timeTwo, (timeThree / correctClientsCount));
+        return new AverageValues(timeOne, timeTwo, averageClientTime/*(timeThree / correctClientsCount)*/);
     }
 
     private long findStartOfTimeWhereAllClientsConnectedToServer() {
