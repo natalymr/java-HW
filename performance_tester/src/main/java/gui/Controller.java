@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.util.List;
 
+import static server.ServerManagerPort.SERVER_MANAGER_PORT;
 import static server.serverManager.ServerManager.RUN_SERVER;
 import static server.serverManager.ServerManager.SEND_RESULTS;
 
@@ -63,10 +64,6 @@ public class Controller {
     private LineChart<Integer, Double> requestTimeLineChart;
     @FXML
     private LineChart<Integer, Double> averageTimeForAllRequestsLineChart;
-
-    // progress indicator
-//    @FXML
-//    private ProgressIndicator progressIndicator;
 
     @FXML
     private void initialize() {
@@ -111,7 +108,7 @@ public class Controller {
 
         // SEND REQUEST TO RUN SERVER
         // TODO what port + inetaddress to choose
-        try (Connection serverManager2gui = new Connection(new Socket("localhost", 6666))) {
+        try (Connection serverManager2gui = new Connection(new Socket(inetAddress, SERVER_MANAGER_PORT))) {
             serverManager2gui.sendRequestByte(RUN_SERVER);
             serverManager2gui.sendServerType(serverType);
             serverManager2gui.sendInetAddress(inetAddress);
@@ -141,7 +138,7 @@ public class Controller {
 
         List<StatisticsResultPerIteration> statisticsResults = null;
 
-        try (Connection serverManager2gui = new Connection(new Socket("localhost", 6666))) {
+        try (Connection serverManager2gui = new Connection(new Socket(inetAddress, SERVER_MANAGER_PORT))) {
             serverManager2gui.sendRequestByte(SEND_RESULTS);
 
              statisticsResults = serverManager2gui.getStatisticsResults();

@@ -16,6 +16,8 @@ import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.List;
 
+import static server.ServerManagerPort.SERVER_MANAGER_PORT;
+
 public class ServerManager {
 
     public static final byte RUN_SERVER      = 1;
@@ -23,10 +25,11 @@ public class ServerManager {
     public static final byte CLEAR_CUR_STATS = 3;
     public static final byte SAVE_CUR_STATS  = 4;
 
-    public static final short SERVER_MANAGER_PORT = 6666;
     private static ServerBase server;
 
     public static void main(String[] args) {
+
+        System.out.println("ServerManager starts");
 
         List<StatisticsResultPerIteration> statisticsResults = new ArrayList<>();
         TestingParameters testingParameters = null;
@@ -39,6 +42,7 @@ public class ServerManager {
 
                         // listen GUI (get parameters about testing and run server with needed type)
                         case RUN_SERVER: {
+                            System.out.println("get new job");
                             // get testingParameters about testing
                             ServerType serverType = guiORclientM2serverM.getServerType();
                             InetAddress inetAddress = guiORclientM2serverM.getInetAddress();
@@ -78,6 +82,7 @@ public class ServerManager {
                                 server.interrupt();
                             }
 
+                            System.out.println("finished the job");
                             break;
                         }
                         // lister client manager (clear statistics)

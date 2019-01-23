@@ -13,6 +13,7 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static server.ServerManagerPort.SERVER_MANAGER_PORT;
 import static server.serverManager.ServerManager.*;
 
 public class ClientManager {
@@ -39,7 +40,7 @@ public class ClientManager {
             ParametersPerIteration currentIterationParameters = parametersPerIterationIterator.next();
 
             // connect to server manager; new iteration
-            try (Connection clientM2serverM = new Connection(new Socket("localhost", SERVER_MANAGER_PORT))) {
+            try (Connection clientM2serverM = new Connection(new Socket(inetAddress, SERVER_MANAGER_PORT))) {
 
                 clientM2serverM.sendRequestByte(CLEAR_CUR_STATS);
 
@@ -89,7 +90,7 @@ public class ClientManager {
             }
 
             // connect to server manager; save statistics
-            try (Connection clientM2serverM = new Connection(new Socket("localhost", SERVER_MANAGER_PORT))) {
+            try (Connection clientM2serverM = new Connection(new Socket(inetAddress, SERVER_MANAGER_PORT))) {
 
                 clientM2serverM.sendRequestByte(SAVE_CUR_STATS);
                 clientM2serverM.sendVaryingParameterValue(currentIterationParameters.getVaryingParameterCurrentValue());
