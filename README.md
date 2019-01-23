@@ -19,16 +19,63 @@
 ## Results
 
 ### Server 1: thread per client
+#### M
 
-![result1](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/resultsThreadPerClient.png?raw=true)
+![r_thread_M](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_thread_M.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_threadPerClient_M_1548209114937.csv) с данными
+
+#### N
+
+![r_thread_N](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_thread_N.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_threadPerClient_N_1548209468469.csv) с данными
+
+#### delay
+
+![r_thread_delay](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_thread_delay.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_threadPerClient_delay_1548210257360.csv) с данными
 
 ### Server 2: sort in thread pool
 
-![result2](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/resultsSortInThreadPool.png?raw=true)
+#### M
+
+![r_pool_M](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_pool_M.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_sortInThreadPool_M_1548210556228.csv) с данными
+
+#### N
+
+![r_pool_N](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_pool_N.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_sortInThreadPool_N_1548210912712.csv) с данными
+
+#### delay
+
+![r_pool_delay](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_pool_delay.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_sortInThreadPool_delay_1548211720067.csv) с данными
 
 ### Server 3: non blocking 
 
-![result3](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/resultsNonBlocking.png?raw=true)
+#### M
+
+![r_nonblock_M](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_nonBlocking_M.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_nonBlockingServer_M_1548212039685.csv) с данными
+
+#### N
+
+![r_nonblock_N](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_nonBlocking_N.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_nonBlockingServer_N_1548212455038.csv) с данными
+
+#### delay
+
+![r_nonblock_delay](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/pictures/results_nonBlocking_delay.png?raw=true)
+
+> [Файл](https://github.com/natalymr/spbau_java_hw/blob/sem2-AM/performance_tester/PerformanceTesterResults_nonBlockingServer_delay_1548213217262.csv) с данными
 
 ## Application Architecture
 
