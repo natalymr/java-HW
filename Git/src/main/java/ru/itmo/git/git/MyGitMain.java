@@ -147,9 +147,13 @@ public class MyGitMain {
         List<File> result = new ArrayList<>();
 
         for (int i = 1; i < args.length; i++) {
-            result.add(
-                new File(pwd.toString() + File.separator + args[i])
-            );
+            File file = new File(pwd.toString() + File.separator + args[i]);
+
+            if (!file.exists()) {
+                throw new RuntimeException("mygit: there is no such file " + file.toString());
+            }
+
+            result.add(file);
         }
 
         return result;
@@ -157,7 +161,7 @@ public class MyGitMain {
 
     private static boolean argsAreMissed(String[] args) {
         if (args.length == 1) {
-            System.out.println("You forgot your arguments");
+            System.out.println("mygit: you forgot your arguments");
             return true;
         }
 

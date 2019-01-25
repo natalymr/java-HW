@@ -191,12 +191,10 @@ class MyGit {
         }
 
         for (File file : filesToAdd) {
-            // add files
+            // add files to tree structure
             objects.add(file);
-
             // restore-create files to add
             checkoutBlobFileContent(file, otherBranchIndex.getFileHash(file), objects.getObjectsDirectory());
-
             // add to index
             index.add(file);
         }
