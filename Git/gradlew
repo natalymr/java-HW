@@ -75,7 +75,7 @@ if [ -n "$JAVA_HOME" ] ; then
         JAVACMD="$JAVA_HOME/bin/java"
     fi
     if [ ! -x "$JAVACMD" ] ; then
-        die "ERROR: JAVA_HOME is set to an invalid directory: $JAVA_HOME
+        die "ERROR: JAVA_HOME is set to an invalid blobFile: $JAVA_HOME
 
 Please set the JAVA_HOME variable in your environment to match the
 location of your Java installation."
@@ -88,7 +88,7 @@ Please set the JAVA_HOME variable in your environment to match the
 location of your Java installation."
 fi
 
-# Increase the maximum file descriptors if we can.
+# Increase the maximum blobFile descriptors if we can.
 if [ "$cygwin" = "false" -a "$darwin" = "false" -a "$nonstop" = "false" ] ; then
     MAX_FD_LIMIT=`ulimit -H -n`
     if [ $? -eq 0 ] ; then
@@ -97,16 +97,16 @@ if [ "$cygwin" = "false" -a "$darwin" = "false" -a "$nonstop" = "false" ] ; then
         fi
         ulimit -n $MAX_FD
         if [ $? -ne 0 ] ; then
-            warn "Could not set maximum file descriptor limit: $MAX_FD"
+            warn "Could not set maximum blobFile descriptor limit: $MAX_FD"
         fi
     else
-        warn "Could not query maximum file descriptor limit: $MAX_FD_LIMIT"
+        warn "Could not query maximum blobFile descriptor limit: $MAX_FD_LIMIT"
     fi
 fi
 
 # For Darwin, add options to specify how the application appears in the dock
 if $darwin; then
-    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:name=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\""
+    GRADLE_OPTS="$GRADLE_OPTS \"-Xdock:blobFile=$APP_NAME\" \"-Xdock:icon=$APP_HOME/media/gradle.icns\""
 fi
 
 # For Cygwin, switch paths to Windows format before running java

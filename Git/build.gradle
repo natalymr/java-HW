@@ -1,10 +1,13 @@
-group 'mit.itmo.ru'
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'ru.itmo.git'
 version '1.0-SNAPSHOT'
 
-apply plugin: 'java'
-apply plugin: 'application'
 
-mainClassName = 'ru.itmo.git.Main'
+mainClassName = 'ru.itmo.git.git.MyGitMain'
 
 sourceCompatibility = 1.8
 
