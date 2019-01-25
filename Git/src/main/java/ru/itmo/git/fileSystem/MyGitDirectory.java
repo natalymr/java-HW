@@ -5,12 +5,14 @@ import ru.itmo.git.branch.Branch;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MyGitDirectory {
     public static final String myGitDirectoryName = ".mygit";
     public static final String CURRENT_BRANCH_LABEL = "current";
+    private static final String OBJECTS_LABEL       = "objects";
+    private static final String BRANCHES_LABEL      = "branches";
+    private static final String INDEX_LABEL         = "index";
+    private static final String HEAD_LABEL          = "head";
     private final File myGitDirectory;
     private final File objectsDirectory;
     private final File branchesDirectory;
@@ -19,10 +21,10 @@ public class MyGitDirectory {
 
     public MyGitDirectory(File root, boolean toRestore) throws IOException {
         myGitDirectory = new File(root.toString() + File.separator + myGitDirectoryName);
-        objectsDirectory = new File(myGitDirectory.toString() + File.separator + "objects");
-        branchesDirectory = new File(myGitDirectory.toString() + File.separator + "branches");
-        indexFile = new File(myGitDirectory.toString() + File.separator + "index");
-        headFile = new File(myGitDirectory.toString() + File.separator + "head");
+        objectsDirectory = new File(myGitDirectory.toString() + File.separator + OBJECTS_LABEL);
+        branchesDirectory = new File(myGitDirectory.toString() + File.separator + BRANCHES_LABEL);
+        indexFile = new File(myGitDirectory.toString() + File.separator + INDEX_LABEL);
+        headFile = new File(myGitDirectory.toString() + File.separator + HEAD_LABEL);
 
         if (!toRestore) {
             myGitDirectory.mkdir();
@@ -88,7 +90,7 @@ public class MyGitDirectory {
     }
 
     public void saveObjects(Objects objects) throws IOException {
-        File objectsFile = new File(objectsDirectory.toString() + File.separator + "objects");
+        File objectsFile = new File(objectsDirectory.toString() + File.separator + OBJECTS_LABEL);
         objectsFile.createNewFile();
 
         ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(objectsFile));
@@ -125,7 +127,7 @@ public class MyGitDirectory {
     }
 
     public Objects restoreObjects() throws IOException, ClassNotFoundException {
-        File objectsFile = new File(objectsDirectory.toString() + File.separator + "objects");
+        File objectsFile = new File(objectsDirectory.toString() + File.separator + OBJECTS_LABEL);
         ObjectInputStream ois = new ObjectInputStream(new FileInputStream(objectsFile));
 
         return (Objects) ois.readObject();

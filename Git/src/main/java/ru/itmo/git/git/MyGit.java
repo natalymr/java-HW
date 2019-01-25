@@ -203,6 +203,7 @@ class MyGit {
 
         for (File file : filesToMerge) {
             mergeBlobFilesContent(otherBranchIndex.getFileHash(file), file, objects.getObjectsDirectory());
+            index.add(file);
         }
 
         commit(branch.getBranchName() + " merged with branch " + otherBranchName);
