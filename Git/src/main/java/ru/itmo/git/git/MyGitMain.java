@@ -148,11 +148,7 @@ public class MyGitMain {
 
         for (int i = 1; i < args.length; i++) {
             File file = new File(pwd.toString() + File.separator + args[i]);
-
-            if (!file.exists()) {
-                throw new RuntimeException("mygit: there is no such file " + file.toString());
-            }
-
+            
             result.add(file);
         }
 
